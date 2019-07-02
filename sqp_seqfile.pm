@@ -1,18 +1,19 @@
 #!/usr/bin/perl
 #
-# epn-seqfile.pm
+# sqp_seqfile.pm
 # Eric Nawrocki
-# EPN, Wed Apr  3 06:13:49 2019
-# version: 0.00
+# EPN, Wed Apr  3 06:13:49 2019 [incept, in vadr]
+# EPN, Tue Jul  2 11:45:46 2019 [migrated from vadr's epn-seqfile.pm (as of commit 69b003d)]]
+# version: 0.01
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
 
-require "epn-ofile.pm";
-require "epn-options.pm";
-require "epn-seq.pm";
-require "epn-utils.pm";
+require "sqp_ofile.pm";
+require "sqp_opts.pm";
+require "sqp_seq.pm";
+require "sqp_utils.pm";
 
 #####################################################################
 # Data structures used in this module:

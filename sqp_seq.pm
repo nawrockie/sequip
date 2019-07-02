@@ -1,15 +1,16 @@
 #!/usr/bin/perl
 #
-# epn-seq.pm
+# sqp_seq.pm
 # Eric Nawrocki
-# EPN, Tue Mar 19 13:29:58 2019
-# version: 0.00
+# EPN, Tue Mar 19 13:29:58 2019 [incept, in vadr]
+# EPN, Tue Jul  2 11:47:41 2019 [migrated from vadr's epn-seq.pm (as of commit 69b003d)]]
+# version: 0.01
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
 
-require "epn-ofile.pm";
+require "sqp_ofile.pm";
 
 #################################################################
 # Subroutine:  seq_SqstringAddNewlines()

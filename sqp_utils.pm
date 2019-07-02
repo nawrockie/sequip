@@ -1,15 +1,16 @@
 #!/usr/bin/perl
 #
-# epn-utils.pm
+# sqp_utils.pm
 # Eric Nawrocki
-# EPN, Tue Mar 19 13:35:06 2019
-# version: 0.00
+# EPN, Tue Mar 19 13:35:06 2019 [incept, in vadr]
+# EPN, Tue Jul  2 11:53:49 2019 [migrated from vadr's epn-utils.pm (as of commit 69b003d)]]
+# version: 0.01
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
 
-require "epn-ofile.pm";
+require "sqp_ofile.pm";
 
 #################################################################
 # Subroutine: utl_RunCommand()
