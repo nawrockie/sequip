@@ -1,0 +1,14 @@
+# epn-ofile.pm
+# version 0.10
+# Jul 2019
+#
+# This file explains some aspects of the epn-ofile.pm module.
+# 
+# The comments in epn-ofile.pm are currently the only documentation
+# for this module. For an example of usage, see vadr and ribovore
+# which, as of this writing, are the only two packages that use
+# epn-ofile.pm:
+#
+# https://github.com/nawrockie/vadr.git
+# https://github.com/nawrockie/ribovore.git
+# 
