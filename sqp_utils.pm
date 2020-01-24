@@ -893,6 +893,42 @@ sub utl_AMaxLengthValue {
 }
 
 #################################################################
+# Subroutine:  utl_AArgMax()
+# Incept:      EPN, Fri Jan 24 15:09:46 2020
+# 
+# Purpose:     Return the index of the maximum value numeric 
+#              element in an array.
+#
+# Arguments: 
+#   $AR: reference to the array
+# 
+# Returns:     The index of the maximum value.
+#
+################################################################# 
+sub utl_AArgMax { 
+  my $nargs_expected = 1;
+  my $sub_name = "utl_AArgMax()";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($AR) = $_[0];
+
+  my $argmax = undef;
+  my $max    = undef;
+  my $nel = scalar(@{$AR});
+  if($nel >= 1) { 
+    $argmax = 0;
+    $max    = $AR->[0];
+  }
+  for(my $i = 1; $i < $nel; $i++) { 
+    if($AR->[$i] > $max) { 
+      $argmax = $i; 
+      $max    = $AR->[$i];
+    }
+  }
+
+  return $argmax;
+}
+
+#################################################################
 # Subroutine:  utl_NumberOfDigits()
 # Incept:      EPN, Tue May  9 11:33:50 2017 [ribovore]
 #              EPN, Fri Nov 13 06:17:25 2009 [ssu-align:ssu.pm:NumberOfDigits()]
