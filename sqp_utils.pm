@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Tue Mar 19 13:35:06 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:53:49 2019 [migrated from vadr's epn-utils.pm (as of commit 69b003d)]]
-# version: 0.03
+# version: 0.04
 #
 use strict;
 use warnings;
@@ -890,6 +890,42 @@ sub utl_AMaxLengthValue {
     if($len > $max) { $max = $len; }
   }
   return $max;
+}
+
+#################################################################
+# Subroutine:  utl_AArgMax()
+# Incept:      EPN, Fri Jan 24 15:09:46 2020
+# 
+# Purpose:     Return the index of the maximum value numeric 
+#              element in an array.
+#
+# Arguments: 
+#   $AR: reference to the array
+# 
+# Returns:     The index of the maximum value.
+#
+################################################################# 
+sub utl_AArgMax { 
+  my $nargs_expected = 1;
+  my $sub_name = "utl_AArgMax()";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($AR) = $_[0];
+
+  my $argmax = undef;
+  my $max    = undef;
+  my $nel = scalar(@{$AR});
+  if($nel >= 1) { 
+    $argmax = 0;
+    $max    = $AR->[0];
+  }
+  for(my $i = 1; $i < $nel; $i++) { 
+    if($AR->[$i] > $max) { 
+      $argmax = $i; 
+      $max    = $AR->[$i];
+    }
+  }
+
+  return $argmax;
 }
 
 #################################################################

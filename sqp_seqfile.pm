@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Wed Apr  3 06:13:49 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:45:46 2019 [migrated from vadr's epn-seqfile.pm (as of commit 69b003d)]]
-# version: 0.03
+# version: 0.04
 #
 use strict;
 use warnings;
@@ -293,8 +293,9 @@ sub sqf_FeatureTableParse {
             # assume positive strand
             $coords .= "," . $start_coord . ".." . $stop_coord  . ":+"; 
           }
-          if ($start_coord <= $stop_coord) { $coords .= "," . $start_coord . ".." . $stop_coord  . ":+"; }
-          else                             { $coords .= "," . $stop_coord  . ".." . $start_coord . ":-"; }
+          $coords .= "," . $start_coord . ".." . $stop_coord;
+          if ($start_coord <= $stop_coord) { $coords .= ":+"; }
+          else                             { $coords .= ":-"; }
 
           # update '$prv_*' values that we use to make sure line order makes sense
           $prv_was_accn           = 0;
