@@ -2001,6 +2001,46 @@ sub utl_HCompare {
   return $ret_str; 
 }
 
+#################################################################
+# Subroutine:  utl_AToFile()
+# Incept:      EPN, Wed Mar 18 14:02:09 2020
+#
+# Purpose:     Print lines of an array to a file.
+#              
+# Arguments: 
+#   $AR:          ref to array
+#   $filename:    output file to write array to
+#   $add_newline: '1' to add newline after each element, 0 not to
+#   $FH_HR:       REF to hash of file handles, including "log" and "cmd"
+# 
+# Returns:     void
+# 
+################################################################# 
+sub utl_AToFile { 
+  my $sub_name = "utl_AToFile()";
+  my $nargs_expected = 4;
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+ 
+  my ($AR, $filename, $add_newline, $FH_HR) = (@_);
+
+  open(OUT, ">", $filename) || ofile_FileOpenFailure($filename, $sub_name, $!, "writing", $FH_HR);
+
+  if($add_newline) { 
+    foreach my $el (@{$AR}) { 
+      print OUT $el . "\n";
+    }
+  }
+  else { 
+    foreach my $el (@{$AR}) { 
+      print OUT $el;
+    }
+  }
+
+  close(OUT);
+
+  return;
+}
+
 ####################################################################
 # the next line is critical, a perl module must return a true value
 return 1;
