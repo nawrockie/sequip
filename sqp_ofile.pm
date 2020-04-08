@@ -970,11 +970,11 @@ sub ofile_TableHumanOutput {
   # contract checks to make sure we have our required input
   # $data_AAR must be defined and have at least 1 row
   if(! defined $data_AAR) { 
-    ofile_FAIL("ERROR in $sub_name, data 2D array is not defined", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, data 2D array is not defined", 1, $FH_HR);
   }
   # $out_FH1 must be defined
   if(! defined $out_FH1) { 
-    ofile_FAIL("ERROR in $sub_name, output file handle 1 is not defined", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, output file handle 1 is not defined", 1, $FH_HR);
   }
 
   # make sure all per-column data that are not empty have same number of columns
@@ -992,7 +992,7 @@ sub ofile_TableHumanOutput {
       my $first_r = $r;
       for($r = ($first_r+1); $r < $nrow_data; $r++) { 
         if((scalar(@{$data_AAR->[$r]}) > 0) && (scalar(@{$data_AAR->[$r]}) != $ncol_data)) { # allow empty arrays --> blank lines
-          ofile_FAIL("ERROR in $sub_name, data row %d has $ncol_data columns, but row " . ($first_r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+          ofile_FAIL("ERROR in $sub_name, data row %d has $ncol_data columns, but row " . ($first_r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", 1, $FH_HR);
         }
       }
     }
@@ -1003,17 +1003,17 @@ sub ofile_TableHumanOutput {
   if($nrow_head > 0) { 
     $ncol_head = scalar(@{$head_AAR->[0]});
     if((defined $head_AAR) && (scalar(@{$head_AAR}) == 0)) { 
-      ofile_FAIL("ERROR in $sub_name, header defined but is empty", undef, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, header defined but is empty", 1, $FH_HR);
     }
     for($r = 1; $r < $nrow_head; $r++) { 
       if(scalar(@{$head_AAR->[$r]}) != $ncol_head) { 
-        ofile_FAIL("ERROR in $sub_name, header row 1 has $ncol_head columns, but header row " . ($r+1) . " has " . scalar(@{$head_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+        ofile_FAIL("ERROR in $sub_name, header row 1 has $ncol_head columns, but header row " . ($r+1) . " has " . scalar(@{$head_AAR->[$r]}) . " columns", 1, $FH_HR);
       }
     }
   }
   my $ncol;
   if(($ncol_head == 0) && ($ncol_data == 0)) { 
-    ofile_FAIL("ERROR in $sub_name, data 2D array and header 2D arrays are both empty", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, data 2D array and header 2D arrays are both empty", 1, $FH_HR);
   }
   elsif(($ncol_head > 0) && ($ncol_data == 0)) { 
     $ncol = $ncol_head;
@@ -1025,17 +1025,17 @@ sub ofile_TableHumanOutput {
     $ncol = $ncol_data;
   }
   else { 
-    ofile_FAIL("ERROR in $sub_name, data num columns ($ncol_data) differs from header num columns ($ncol_head)", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, data num columns ($ncol_data) differs from header num columns ($ncol_head)", 1, $FH_HR);
   }
 
   # cljust_AR must be undef, or have $ncol values all of which must be '0' or '1'
   if(defined $cljust_AR) { 
     if(scalar(@{$cljust_AR}) != $ncol) { 
-      ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol columns, but column left justification array has data for " . scalar(@{$cljust_AR}) . " columns", undef, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol columns, but column left justification array has data for " . scalar(@{$cljust_AR}) . " columns", 1, $FH_HR);
     }
     for($c = 0; $c < $ncol; $c++) { 
       if(($cljust_AR->[$c] != "0") && ($cljust_AR->[$c] != "1")) { 
-        ofile_FAIL("ERROR in $sub_name, cljust_AR column " . ($c+1) . " value is " . $cljust_AR->[$c] . ", but it must be 0 or 1", undef, 1, $FH_HR);
+        ofile_FAIL("ERROR in $sub_name, cljust_AR column " . ($c+1) . " value is " . $cljust_AR->[$c] . ", but it must be 0 or 1", 1, $FH_HR);
       }
     }
   }
