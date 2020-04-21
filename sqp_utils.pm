@@ -1049,7 +1049,7 @@ sub utl_ADump {
   
   my $nel = scalar(@{$AR});
   for(my $i = 0; $i < $nel; $i++) { 
-    printf $FH ("*A el $i: " . $AR->[$i] . "\n");
+    printf $FH ("A[$i]: " . $AR->[$i] . "\n");
   }
 
   return;
@@ -1079,7 +1079,7 @@ sub utl_HDump {
   printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
   
   foreach my $key (sort keys %{$HR}) { 
-    printf $FH ("\tH key: $key value: %s\n", $HR->{$key});
+    printf $FH ("\tH{$key}: %s\n", $HR->{$key});
   }
 
   return;
@@ -1110,7 +1110,7 @@ sub utl_AADump {
 
   my $nel1 = scalar(@{$AAR});
   for(my $i1 = 0; $i1 < $nel1; $i1++) { 
-    printf $FH ("*A*A el1 %2d\n", ($i1)); 
+    printf $FH ("*A*A[$i1]\n");
     my $nel2 = scalar(@{$AAR->[$i1]});
     for(my $i2 = 0; $i2 < $nel2; $i2++) { 
       printf $FH ("\tA*A*[$i1][$i2]: %s\n", $AAR->[$i1][$i2]);
@@ -1145,10 +1145,10 @@ sub utl_HHDump {
   printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
   
   foreach my $key1 (sort keys %{$HHR}) { 
-    printf $FH ("*H*H key: $key1\n");
+    printf $FH ("*H*H{$key1}\n");
     my $nel = scalar(keys %{$HHR->{$key1}});
     foreach my $key2 (sort keys %{$HHR->{$key1}}) { 
-      printf $FH ("\tH*H* key: $key2 value: %s\n", $HHR->{$key1}{$key2}); 
+      printf $FH ("\tH*H*{$key1}{$key2}: %s\n", $HHR->{$key1}{$key2}); 
     }
     printf $FH ("\n");
   }
@@ -1181,17 +1181,11 @@ sub utl_AHHDump {
 
   my $nel1 = scalar(@{$AHHR});
   for(my $i1 = 0; $i1 < $nel1; $i1++) { 
-    printf $FH ("*A*HH el %2d\n", ($i1)); 
-    my $nel2 = scalar(keys %{$AHHR->[$i1]}); 
-    my $i2 = 0;
+    printf $FH ("*A*HH[$i1]\n");
     foreach my $key2 (sort keys %{$AHHR->[$i1]}) { 
-      printf $FH ("\tA*H*H el %2d key: $key2\n", ($i2)); 
-      $i2++;
-      my $nel3 = scalar(keys %{$AHHR->[$i1]{$key2}});
-      my $i3 = 0;
+      printf $FH ("\tA*H*H[$i1]{$key2}\n");
       foreach my $key3 (sort keys %{$AHHR->[$i1]{$key2}}) { 
-        printf $FH ("\tAH*H* el %2d key: $key3 value: %s\n", ($i3), $AHHR->[$i1]{$key2}{$key3}); 
-        $i3++;
+        printf $FH ("\tAH*H*[$i1]{$key2}{$key3}: %s\n", $AHHR->[$i1]{$key2}{$key3}); 
       }
       printf $FH ("\n");
     }
@@ -1226,12 +1220,10 @@ sub utl_AHDump {
 
   my $nel1 = scalar(@{$AHR});
   for(my $i1 = 0; $i1 < $nel1; $i1++) { 
-    printf $FH ("*A*H el %2d\n", ($i1)); 
+    printf $FH ("*A*H[$i1]\n");
     my $nel2 = scalar(keys %{$AHR->[$i1]}); 
-    my $i2 = 0;
     foreach my $key2 (sort keys %{$AHR->[$i1]}) { 
-      printf $FH ("\tA*H* el %2d key: $key2 value: %s\n", ($i2), $AHR->[$i1]{$key2}); 
-      $i2++;
+      printf $FH ("\tA*H*[$i1]{$key2}: %s\n", $AHR->[$i1]{$key2}); 
     }
     printf $FH ("\n");
   }
@@ -1239,6 +1231,40 @@ sub utl_AHDump {
   return;
 }
 
+#################################################################
+# Subroutine: utl_HADump()
+# Incept:     EPN, Tue Apr 21 06:04:07 2020
+#
+# Purpose:    Dump the contents of a hash of arrays
+#             probably for debugging purposes.
+#
+# Args:       $name2print:  name of array of hashes of hashes
+#             $HAR:         ref of the hash of arrays
+#             $FH:          file handle to print (often *STDOUT)
+#
+# Returns:    void
+# 
+#################################################################
+sub utl_HADump { 
+  my $sub_name = "utl_HADump()";
+  my $nargs_expected = 3;
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+ 
+  my ($name2print, $HAR, $FH) = @_;
+
+  printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
+
+  foreach my $key1 (sort keys %{$HAR}) { 
+    printf $FH ("*H*A{$key1}:\n");
+    my $nel2 = scalar(@{$HAR->{$key1}});
+    for(my $i2 = 0; $i2 < $nel2; $i2++) { 
+      printf $FH ("\tH*A*{$key1}[$i2]: %s\n", $HAR->{$key1}[$i2]);
+    }
+    printf $FH ("\n");
+  }
+
+  return;
+}
 
 #################################################################
 # Subroutine: utl_HAHDump()
@@ -1264,12 +1290,12 @@ sub utl_HAHDump {
   printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
 
   foreach my $key1 (sort keys %{$HAHR}) { 
-    printf $FH ("*H*AH key $key1\n");
+    printf $FH ("*H*AH{$key1}\n");
     my $nel2 = scalar(@{$HAHR->{$key1}});
     for (my $i2 = 0; $i2 < $nel2; $i2++) { 
-      printf $FH ("\tH*A*H key: $key1 el: $i2:\n", $i2);
+      printf $FH ("\tH*A*H{$key1}[$i2]:\n", $i2);
       foreach my $key3 (sort keys %{$HAHR->{$key1}[$i2]}) { 
-        printf $FH ("\t\tHA*H* key: $key1 el: $i2 key: $key3 value: %s\n", $HAHR->{$key1}[$i2]{$key3});
+        printf $FH ("\t\tHA*H*{$key1}[$i2]{$key3}: %s\n", $HAHR->{$key1}[$i2]{$key3});
       }
     }
     printf $FH ("\n");
@@ -1302,11 +1328,11 @@ sub utl_HHHDump {
   printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
 
   foreach my $key1 (sort keys %{$HHHR}) { 
-    printf $FH ("*H*HH key1: $key1\n");
+    printf $FH ("*H*HH{$key1}\n");
     foreach my $key2 (sort keys %{$HHHR->{$key1}}) { 
-      printf $FH ("\tH*H*H key2: $key1 key2: $key2\n");
+      printf $FH ("\tH*H*H{$key1}{$key2}\n");
       foreach my $key3 (sort keys %{$HHHR->{$key1}{$key2}}) { 
-        printf $FH ("\t\tHH*H* key: $key1 key2: $key2 key3: $key3 value: %s\n", $HHHR->{$key1}{$key2}{$key3});
+        printf $FH ("\t\tHH*H*{$key1}{$key2}{$key3}: %s\n", $HHHR->{$key1}{$key2}{$key3});
       }
       printf $FH ("\n");
     }
@@ -1316,6 +1342,44 @@ sub utl_HHHDump {
   return;
 }
 
+#################################################################
+# Subroutine: utl_HHADump()
+# Incept:     EPN, Tue Apr 21 05:59:05 2020
+#
+# Purpose:    Dump the contents of a hash of hashes of arrays,
+#             probably for debugging purposes.
+#
+# Args:       $name2print:  name of hash of hashes of hashes
+#             $HHAR:        ref of the hash of hashes of arrays
+#             $FH:          file handle to print (often *STDOUT)
+#
+# Returns:    void
+# 
+#################################################################
+sub utl_HHADump { 
+  my $sub_name = "utl_HHADump()";
+  my $nargs_expected = 3;
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+ 
+  my ($name2print, $HHAR, $FH) = @_;
+
+  printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
+
+  foreach my $key1 (sort keys %{$HHAR}) { 
+    printf $FH ("*H*HA{$key1}\n");
+    foreach my $key2 (sort keys %{$HHAR->{$key1}}) { 
+      printf $FH ("\tH*H*A{$key1}{$key2}\n");
+      my $nel3 = scalar(@{$HHAR->{$key1}{$key2}});
+      for(my $i3 = 0; $i3 < $nel3; $i3++) { 
+        printf $FH ("\t\tHH*A*{$key1}{$key2}[$i3]: %s\n", $HHAR->{$key1}{$key2}[$i3]);
+      }
+      printf $FH ("\n");
+    }
+    printf $FH ("\n");
+  }
+
+  return;
+}
 
 #####################################################################
 # Subroutine: utl_IsInteger()
