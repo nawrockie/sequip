@@ -1479,6 +1479,35 @@ sub utl_HSumValues {
   return $sum;
 }
 
+#################################################################
+# Subroutine:  utl_HSumValuesSubset()
+# Incept:      EPN, Thu Apr 23 06:52:57 2020
+# 
+# Purpose:     Sum the values for a subset of keys in a hash.
+#              Does not check that all values in @{$AR} are 
+#              actually keys in %{$HR}.
+#
+# Arguments: 
+#   $HR: reference to the hash
+#   $AR: reference to the array with the subset of keys to sum
+# 
+# Returns:     Sum of all values in the hash
+#
+################################################################# 
+sub utl_HSumValuesSubset {
+  my $nargs_expected = 2;
+  my $sub_name = "utl_HSumValuesSubset()";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($HR, $AR) = @_;
+
+  my $sum = 0;
+  foreach my $key (@{$AR}) { 
+    if(defined $HR->{$key}) { 
+      $sum += $HR->{$key};
+    }
+  }
+  return $sum;
+}
 
 #################################################################
 # Subroutine: utl_StringMonoChar()
