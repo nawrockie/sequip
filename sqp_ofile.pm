@@ -872,7 +872,7 @@ sub ofile_FileOpenFailure {
 #
 # Arguments: 
 #   $errmsg:  the error message to write
-#   $status:  error status to exit with
+#   $status:  error status 
 #   $FH_HR:   ref to hash of file handles, including "log" and "cmd"
 # 
 # Returns:     Nothing, this function will exit the program.
@@ -891,7 +891,7 @@ sub ofile_FAIL {
     exit(1); 
   }
   my ($errmsg, $status, $FH_HR) = @_;
-  
+
   if($errmsg !~ m/\n$/) { $errmsg .= "\n\n"; }
   else                  { $errmsg .= "\n"; }
   if($errmsg !~ m/^\n/) { $errmsg = "\n" . $errmsg; }
@@ -916,7 +916,7 @@ sub ofile_FAIL {
   }
   
   printf STDERR $errmsg; 
-  exit($status);
+  exit 1;
 }
 
 #################################################################
