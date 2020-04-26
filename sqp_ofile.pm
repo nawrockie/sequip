@@ -55,7 +55,8 @@ use Time::HiRes qw(gettimeofday);
 #   ofile_ValidateOutputFileInfoHashOfHashes()
 #   ofile_OutputProgressPrior()
 #   ofile_OutputProgressComplete()
-#   ofile_OutputConclusionAndCloseFiles()
+#   ofile_OutputConclusionAndCloseFilesOk()
+#   ofile_OutputConclusionAndCloseFilesFail()
 #   ofile_OutputTiming()
 #   ofile_OutputString()
 #   ofile_OutputBanner()
@@ -441,7 +442,73 @@ sub ofile_OutputProgressComplete {
 }
 
 #######################################################################
-# Subroutine: ofile_OutputConclusionAndCloseFiles()
+# Subroutine: ofile_OutputConclusionsAndCloseFilesOk()
+# Incept:     EPN, Fri May 25 09:40:26 2018
+#             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
+# 
+# Purpose:    Output a list of the main output files created 
+#             and the final few lines of output and optionally the 
+#             run time timing to the summary file. Print date and
+#             system information to the log file. 
+# 
+#             Close all open file handles.
+#
+#             Final line will be '[ok]', this is only difference with
+#             ofile_OutputConclusionsAndCloseFilesFail()
+# Arguments: 
+#  $total_secs:            total number of seconds, "" to not print timing
+#  $odir:                  output directory, if "", files were put in cwd
+#  $ofile_info_HHR:        REF to the 2D hash of output file information
+#
+# Returns:   Nothing.
+# 
+# Dies:      Never.
+#
+####################################################################
+sub ofile_OutputConclusionsAndCloseFilesOk { 
+  my $nargs_expected = 3;
+  my $sub_name = "ofile_OutputConclusionsAndCloseFilesOk";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($total_secs, $odir, $ofile_info_HHR) = @_;
+
+  return _ofile_helper_output_conclusion_and_close_files($total_secs, $odir, "[ok]", $ofile_info_HHR);
+}
+
+#######################################################################
+# Subroutine: ofile_OutputConclusionsAndCloseFilesFail()
+# Incept:     EPN, Fri May 25 09:40:26 2018
+#             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
+# 
+# Purpose:    Output a list of the main output files created 
+#             and the final few lines of output and optionally the 
+#             run time timing to the summary file. Print date and
+#             system information to the log file. 
+# 
+#             Close all open file handles.
+#
+#             Final line will be '[FAIL]', this is only difference with
+#             ofile_OutputConclusionsAndCloseFilesOk()
+# Arguments: 
+#  $total_secs:            total number of seconds, "" to not print timing
+#  $odir:                  output directory, if "", files were put in cwd
+#  $ofile_info_HHR:        REF to the 2D hash of output file information
+#
+# Returns:   Nothing.
+# 
+# Dies:      Never.
+#
+####################################################################
+sub ofile_OutputConclusionsAndCloseFilesFail { 
+  my $nargs_expected = 3;
+  my $sub_name = "ofile_OutputConclusionsAndCloseFilesFail"
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($total_secs, $odir, $ofile_info_HHR) = @_;
+
+  return _ofile_helper_output_conclusion_and_close_files($total_secs, $odir, "[FAIL]", $ofile_info_HHR);
+}
+
+#######################################################################
+# Subroutine: _ofile_helper_output_conclusion_and_close_files()
 # Incept:     EPN, Fri May 25 09:40:26 2018
 #             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
 # 
@@ -455,6 +522,7 @@ sub ofile_OutputProgressComplete {
 # Arguments: 
 #  $total_secs:            total number of seconds, "" to not print timing
 #  $odir:                  output directory, if "", files were put in cwd
+#  $final_msg:             string to put on final line: "[ok]" or "[FAIL]"
 #  $ofile_info_HHR:        REF to the 2D hash of output file information
 #
 # Returns:   Nothing.
@@ -462,11 +530,11 @@ sub ofile_OutputProgressComplete {
 # Dies:      Never.
 #
 ####################################################################
-sub ofile_OutputConclusionAndCloseFiles { 
-  my $nargs_expected = 3;
-  my $sub_name = "ofile_OutputConclusionAndCloseFiles()";
+sub _ofile_helper_output_conclusion_and_close_files { 
+  my $nargs_expected = 4;
+  my $sub_name = "_ofile_helper_output_conclusion_and_close_files";
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
-  my ($total_secs, $odir, $ofile_info_HHR) = @_;
+  my ($total_secs, $odir, $final_msg, $ofile_info_HHR) = @_;
 
   ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR);
 
@@ -506,14 +574,14 @@ sub ofile_OutputConclusionAndCloseFiles {
     ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
     ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
     ofile_OutputString($log_FH, 1, "# \n");
-    ofile_OutputString($log_FH, 1, "[ok]\n");
+    ofile_OutputString($log_FH, 1, $final_msg . "\n");
   }
 
   if(defined $cmd_FH) { 
     ofile_OutputString($cmd_FH, 0, "# " . `date`);      # prints date,        e.g.: 'Mon Feb 22 16:37:09 EST 2016'
     ofile_OutputString($cmd_FH, 0, "# " . `uname -a`);  # prints system info, e.g.: 'Linux cbbdev13 2.6.32-573.7.1.el6.x86_64 #1 SMP Tue Sep 22 22:00:00 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux'
     if($total_secs ne "") { 
-      ofile_OutputString($cmd_FH, 0, "[ok]\n");
+      ofile_OutputString($cmd_FH, 0, $final_msg . "\n");
     }
   }
   
