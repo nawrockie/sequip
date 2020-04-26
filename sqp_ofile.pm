@@ -442,7 +442,7 @@ sub ofile_OutputProgressComplete {
 }
 
 #######################################################################
-# Subroutine: ofile_OutputConclusionsAndCloseFilesOk()
+# Subroutine: ofile_OutputConclusionAndCloseFilesOk()
 # Incept:     EPN, Fri May 25 09:40:26 2018
 #             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
 # 
@@ -465,9 +465,9 @@ sub ofile_OutputProgressComplete {
 # Dies:      Never.
 #
 ####################################################################
-sub ofile_OutputConclusionsAndCloseFilesOk { 
+sub ofile_OutputConclusionAndCloseFilesOk { 
   my $nargs_expected = 3;
-  my $sub_name = "ofile_OutputConclusionsAndCloseFilesOk";
+  my $sub_name = "ofile_OutputConclusionAndCloseFilesOk";
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
   my ($total_secs, $odir, $ofile_info_HHR) = @_;
 
@@ -475,7 +475,7 @@ sub ofile_OutputConclusionsAndCloseFilesOk {
 }
 
 #######################################################################
-# Subroutine: ofile_OutputConclusionsAndCloseFilesFail()
+# Subroutine: ofile_OutputConclusionAndCloseFilesFail()
 # Incept:     EPN, Fri May 25 09:40:26 2018
 #             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
 # 
@@ -498,9 +498,9 @@ sub ofile_OutputConclusionsAndCloseFilesOk {
 # Dies:      Never.
 #
 ####################################################################
-sub ofile_OutputConclusionsAndCloseFilesFail { 
+sub ofile_OutputConclusionAndCloseFilesFail { 
   my $nargs_expected = 3;
-  my $sub_name = "ofile_OutputConclusionsAndCloseFilesFail"
+  my $sub_name = "ofile_OutputConclusionsndCloseFilesFail";
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
   my ($total_secs, $odir, $ofile_info_HHR) = @_;
 
