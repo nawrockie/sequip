@@ -1079,7 +1079,7 @@ sub utl_HDump {
   printf $FH ("in $sub_name, printing %s:\n", (defined $name2print) ? $name2print : "undefined");
   
   foreach my $key (sort keys %{$HR}) { 
-    printf $FH ("\tH{$key}: %s\n", $HR->{$key});
+    printf $FH ("\tH{$key}: %s\n", (defined $HR->{$key}) ? $HR->{$key} : "!undef!");
   }
 
   return;
