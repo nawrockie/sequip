@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Wed Apr  3 06:13:49 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:45:46 2019 [migrated from vadr's epn-seqfile.pm (as of commit 69b003d)]]
-# version: 0.04
+# version: 0.05
 #
 use strict;
 use warnings;
@@ -732,30 +732,37 @@ sub sqf_StoreQualifierValue {
   return;
 }
 
-
 #################################################################
-# Subroutine: sqf_BlastDbProteinCreate
+# Subroutine: sqf_BlastDbCreate
 # Incept:     EPN, Mon Mar 18 09:40:28 2019
 # 
-# Purpose:    Create a protein blast database from a fasta file.
+# Purpose:    Create a blast database from a fasta file of either
+#             type 'prot' or 'nucl'
 #
 # Arguments:
 #   $makeblastdb:    path to 'makeblastdb' executable
+#   $dbtype:         'prot' for protein or 'nucl' for nucleotide
 #   $fa_file:        FASTA file of protein sequences to make blast db from
 #   $opt_HHR:        REF to 2D hash of option values, see top of epn-options.pm for description
 #   $FH_HR:          REF to hash of file handles, including "log" and "cmd", can be undef, PRE-FILLED
 #                    
+# Dies: if $dbtype is not 'nucl' or 'prot' or if makeblastdb fails
+# 
 # Returns:    void
 #
 #################################################################
-sub sqf_BlastDbProteinCreate {
-  my $sub_name = "sqf_BlastDbProteinCreate";
-  my $nargs_expected = 4;
+sub sqf_BlastDbCreate {
+  my $sub_name = "sqf_BlastDbCreate";
+  my $nargs_expected = 5;
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
 
-  my ($makeblastdb, $fa_file, $opt_HHR, $FH_HR) = @_;
+  my ($makeblastdb, $dbtype, $fa_file, $opt_HHR, $FH_HR) = @_;
 
-  utl_RunCommand($makeblastdb . " -in $fa_file -dbtype prot > /dev/null", opt_Get("-v", $opt_HHR), 0, $FH_HR);
+  if(($dbtype ne "prot") && ($dbtype ne "nucl")) { 
+    ofile_FAIL("ERROR in $sub_name, dbtype is $dbtype, expected to be 'prot' or 'nucl'", 1, $FH_HR);
+  }
+
+  utl_RunCommand($makeblastdb . " -in $fa_file -dbtype $dbtype > /dev/null", opt_Get("-v", $opt_HHR), 0, $FH_HR);
 
   return;
 }
@@ -896,6 +903,8 @@ sub sqf_FastaWriteSequence {
 #
 # Arguments:
 #  $esl_reformat: esl-reformat executable file
+#  $opt_string:   string to options to supply to esl-reformat
+#                 (may not contain --informat)
 #  $in_file:      input file for esl-reformat
 #  $out_file:     output file from esl-reformat
 #  $in_format:    input format
@@ -905,21 +914,82 @@ sub sqf_FastaWriteSequence {
 #
 # Returns:    void
 #
-# Dies:       if there's a problem fetching the sequence file
+# Dies:       if $opt_string contains '--informat'
+#             if esl-reformat fails
 #################################################################
 sub sqf_EslReformatRun { 
   my $sub_name = "sqf_EslReformatRun";
-  my $nargs_expected = 7;
+  my $nargs_expected = 8;
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
 
-  my ($esl_reformat, $in_file, $out_file, $in_format, $out_format, $opt_HHR, $FH_HR) = @_;
+  my ($esl_reformat, $opt_string, $in_file, $out_file, $in_format, $out_format, $opt_HHR, $FH_HR) = @_;
 
-  my $cmd = $esl_reformat . " --informat $in_format $out_format $in_file > $out_file";
+  if(defined $opt_string) { 
+    if($opt_string =~ /\s*\-\-informat\s*/) { 
+      ofile_FAIL("ERROR in $sub_name, opt_string $opt_string contains '--informat'", 1, $FH_HR);
+    }
+  }
+  
+  if(! defined $opt_string) { 
+    $opt_string = "";
+  }
+
+  my $cmd = $esl_reformat . " --informat $in_format $opt_string $out_format $in_file > $out_file";
   utl_RunCommand($cmd, opt_Get("-v", $opt_HHR), 0, $FH_HR);
 
   # remove a .ssi file for newly created file if it exists
   my $ssi_file = $out_file . ".ssi";
   if(-e $ssi_file) { unlink $ssi_file; }
+
+  return;
+}
+
+#################################################################
+# Subroutine: sqf_EslAlimergeListRun()
+# Incept:     EPN, Sun Apr 19 07:07:53 2020
+#
+# Synopsis: Use esl-alimerge to merge alignment files listed in
+#           a list file
+#
+# Arguments:
+#  $esl_alimerge: esl-reformat executable file
+#  $list_file:    input file for esl-alimerge --list
+#  $opt_string:   string of options to supply to esl-alimerge
+#                 (may not contain, '-o', '--list' or '--outformat')
+#  $out_file:     output alignment file from esl-alimerge
+#  $out_format:   output format
+#  $opt_HHR:      REF to 2D hash of option values, see top of epn-options.pm for description, PRE-FILLED
+#  $FH_HR:        REF to hash of file handles, including "log" and "cmd"
+#
+# Returns:    void
+#
+# Dies:       if $opt_string contains '--list' or '--outformat' or -o
+#             if esl-alimerge fails
+#################################################################
+sub sqf_EslAlimergeListRun { 
+  my $sub_name = "sqf_EslAlimergeListRun";
+  my $nargs_expected = 7;
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+
+  my ($esl_alimerge, $list_file, $opt_string, $out_file, $out_format, $opt_HHR, $FH_HR) = @_;
+
+  if(defined $opt_string) { 
+    if($opt_string =~ /\s*\-\-list\s*/) { 
+      ofile_FAIL("ERROR in $sub_name, opt_string $opt_string contains '--list'", 1, $FH_HR);
+    }
+    if($opt_string =~ /\s*\-\-outformat\s*/) { 
+      ofile_FAIL("ERROR in $sub_name, opt_string $opt_string contains '--outformat'", 1, $FH_HR);
+    }
+    if($opt_string =~ /\s*\-o\s*/) { 
+      ofile_FAIL("ERROR in $sub_name, opt_string $opt_string contains '-o'", 1, $FH_HR);
+    }
+  }
+  
+  if(! defined $opt_string) { 
+    $opt_string = "";
+  }
+  my $cmd = $esl_alimerge . " --list --outformat $out_format $opt_string $list_file > $out_file";
+  utl_RunCommand($cmd, opt_Get("-v", $opt_HHR), 0, $FH_HR);
 
   return;
 }

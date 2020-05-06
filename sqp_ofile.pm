@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Tue Jul  2 11:16:31 2019 [epn-ofile.pm started]
 # EPN, Tue Jul  2 11:43:02 2019 [migrated from epn-ofile]
-# version: 0.04
+# version: 0.05
 #
 use strict;
 use warnings;
@@ -55,7 +55,8 @@ use Time::HiRes qw(gettimeofday);
 #   ofile_ValidateOutputFileInfoHashOfHashes()
 #   ofile_OutputProgressPrior()
 #   ofile_OutputProgressComplete()
-#   ofile_OutputConclusionAndCloseFiles()
+#   ofile_OutputConclusionAndCloseFilesOk()
+#   ofile_OutputConclusionAndCloseFilesFail()
 #   ofile_OutputTiming()
 #   ofile_OutputString()
 #   ofile_OutputBanner()
@@ -441,7 +442,73 @@ sub ofile_OutputProgressComplete {
 }
 
 #######################################################################
-# Subroutine: ofile_OutputConclusionAndCloseFiles()
+# Subroutine: ofile_OutputConclusionAndCloseFilesOk()
+# Incept:     EPN, Fri May 25 09:40:26 2018
+#             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
+# 
+# Purpose:    Output a list of the main output files created 
+#             and the final few lines of output and optionally the 
+#             run time timing to the summary file. Print date and
+#             system information to the log file. 
+# 
+#             Close all open file handles.
+#
+#             Final line will be '[ok]', this is only difference with
+#             ofile_OutputConclusionsAndCloseFilesFail()
+# Arguments: 
+#  $total_secs:            total number of seconds, "" to not print timing
+#  $odir:                  output directory, if "", files were put in cwd
+#  $ofile_info_HHR:        REF to the 2D hash of output file information
+#
+# Returns:   Nothing.
+# 
+# Dies:      Never.
+#
+####################################################################
+sub ofile_OutputConclusionAndCloseFilesOk { 
+  my $nargs_expected = 3;
+  my $sub_name = "ofile_OutputConclusionAndCloseFilesOk";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($total_secs, $odir, $ofile_info_HHR) = @_;
+
+  return _ofile_helper_output_conclusion_and_close_files($total_secs, $odir, "[ok]", $ofile_info_HHR);
+}
+
+#######################################################################
+# Subroutine: ofile_OutputConclusionAndCloseFilesFail()
+# Incept:     EPN, Fri May 25 09:40:26 2018
+#             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
+# 
+# Purpose:    Output a list of the main output files created 
+#             and the final few lines of output and optionally the 
+#             run time timing to the summary file. Print date and
+#             system information to the log file. 
+# 
+#             Close all open file handles.
+#
+#             Final line will be '[FAIL]', this is only difference with
+#             ofile_OutputConclusionsAndCloseFilesOk()
+# Arguments: 
+#  $total_secs:            total number of seconds, "" to not print timing
+#  $odir:                  output directory, if "", files were put in cwd
+#  $ofile_info_HHR:        REF to the 2D hash of output file information
+#
+# Returns:   Nothing.
+# 
+# Dies:      Never.
+#
+####################################################################
+sub ofile_OutputConclusionAndCloseFilesFail { 
+  my $nargs_expected = 3;
+  my $sub_name = "ofile_OutputConclusionsndCloseFilesFail";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($total_secs, $odir, $ofile_info_HHR) = @_;
+
+  return _ofile_helper_output_conclusion_and_close_files($total_secs, $odir, "[FAIL]", $ofile_info_HHR);
+}
+
+#######################################################################
+# Subroutine: _ofile_helper_output_conclusion_and_close_files()
 # Incept:     EPN, Fri May 25 09:40:26 2018
 #             EPN, Thu Nov  5 18:25:31 2009 [ssu-align] 
 # 
@@ -455,6 +522,7 @@ sub ofile_OutputProgressComplete {
 # Arguments: 
 #  $total_secs:            total number of seconds, "" to not print timing
 #  $odir:                  output directory, if "", files were put in cwd
+#  $final_msg:             string to put on final line: "[ok]" or "[FAIL]"
 #  $ofile_info_HHR:        REF to the 2D hash of output file information
 #
 # Returns:   Nothing.
@@ -462,11 +530,11 @@ sub ofile_OutputProgressComplete {
 # Dies:      Never.
 #
 ####################################################################
-sub ofile_OutputConclusionAndCloseFiles { 
-  my $nargs_expected = 3;
-  my $sub_name = "ofile_OutputConclusionAndCloseFiles()";
+sub _ofile_helper_output_conclusion_and_close_files { 
+  my $nargs_expected = 4;
+  my $sub_name = "_ofile_helper_output_conclusion_and_close_files";
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
-  my ($total_secs, $odir, $ofile_info_HHR) = @_;
+  my ($total_secs, $odir, $final_msg, $ofile_info_HHR) = @_;
 
   ofile_ValidateOutputFileInfoHashOfHashes($ofile_info_HHR);
 
@@ -506,14 +574,14 @@ sub ofile_OutputConclusionAndCloseFiles {
     ofile_OutputTiming("# Elapsed time: ", $total_secs, 1, $log_FH); 
     ofile_OutputString($log_FH, 1, "#                hh:mm:ss\n");
     ofile_OutputString($log_FH, 1, "# \n");
-    ofile_OutputString($log_FH, 1, "[ok]\n");
+    ofile_OutputString($log_FH, 1, $final_msg . "\n");
   }
 
   if(defined $cmd_FH) { 
     ofile_OutputString($cmd_FH, 0, "# " . `date`);      # prints date,        e.g.: 'Mon Feb 22 16:37:09 EST 2016'
     ofile_OutputString($cmd_FH, 0, "# " . `uname -a`);  # prints system info, e.g.: 'Linux cbbdev13 2.6.32-573.7.1.el6.x86_64 #1 SMP Tue Sep 22 22:00:00 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux'
     if($total_secs ne "") { 
-      ofile_OutputString($cmd_FH, 0, "[ok]\n");
+      ofile_OutputString($cmd_FH, 0, $final_msg . "\n");
     }
   }
   
@@ -872,7 +940,7 @@ sub ofile_FileOpenFailure {
 #
 # Arguments: 
 #   $errmsg:  the error message to write
-#   $status:  error status to exit with
+#   $status:  error status 
 #   $FH_HR:   ref to hash of file handles, including "log" and "cmd"
 # 
 # Returns:     Nothing, this function will exit the program.
@@ -891,7 +959,7 @@ sub ofile_FAIL {
     exit(1); 
   }
   my ($errmsg, $status, $FH_HR) = @_;
-  
+
   if($errmsg !~ m/\n$/) { $errmsg .= "\n\n"; }
   else                  { $errmsg .= "\n"; }
   if($errmsg !~ m/^\n/) { $errmsg = "\n" . $errmsg; }
@@ -916,7 +984,7 @@ sub ofile_FAIL {
   }
   
   printf STDERR $errmsg; 
-  exit($status);
+  exit 1;
 }
 
 #################################################################
@@ -970,11 +1038,11 @@ sub ofile_TableHumanOutput {
   # contract checks to make sure we have our required input
   # $data_AAR must be defined and have at least 1 row
   if(! defined $data_AAR) { 
-    ofile_FAIL("ERROR in $sub_name, data 2D array is not defined", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, data 2D array is not defined", 1, $FH_HR);
   }
   # $out_FH1 must be defined
   if(! defined $out_FH1) { 
-    ofile_FAIL("ERROR in $sub_name, output file handle 1 is not defined", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, output file handle 1 is not defined", 1, $FH_HR);
   }
 
   # make sure all per-column data that are not empty have same number of columns
@@ -992,7 +1060,7 @@ sub ofile_TableHumanOutput {
       my $first_r = $r;
       for($r = ($first_r+1); $r < $nrow_data; $r++) { 
         if((scalar(@{$data_AAR->[$r]}) > 0) && (scalar(@{$data_AAR->[$r]}) != $ncol_data)) { # allow empty arrays --> blank lines
-          ofile_FAIL("ERROR in $sub_name, data row %d has $ncol_data columns, but row " . ($first_r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+          ofile_FAIL("ERROR in $sub_name, data row %d has $ncol_data columns, but row " . ($first_r+1) . " has " . scalar(@{$data_AAR->[$r]}) . " columns", 1, $FH_HR);
         }
       }
     }
@@ -1003,17 +1071,17 @@ sub ofile_TableHumanOutput {
   if($nrow_head > 0) { 
     $ncol_head = scalar(@{$head_AAR->[0]});
     if((defined $head_AAR) && (scalar(@{$head_AAR}) == 0)) { 
-      ofile_FAIL("ERROR in $sub_name, header defined but is empty", undef, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, header defined but is empty", 1, $FH_HR);
     }
     for($r = 1; $r < $nrow_head; $r++) { 
       if(scalar(@{$head_AAR->[$r]}) != $ncol_head) { 
-        ofile_FAIL("ERROR in $sub_name, header row 1 has $ncol_head columns, but header row " . ($r+1) . " has " . scalar(@{$head_AAR->[$r]}) . " columns", undef, 1, $FH_HR);
+        ofile_FAIL("ERROR in $sub_name, header row 1 has $ncol_head columns, but header row " . ($r+1) . " has " . scalar(@{$head_AAR->[$r]}) . " columns", 1, $FH_HR);
       }
     }
   }
   my $ncol;
   if(($ncol_head == 0) && ($ncol_data == 0)) { 
-    ofile_FAIL("ERROR in $sub_name, data 2D array and header 2D arrays are both empty", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, data 2D array and header 2D arrays are both empty", 1, $FH_HR);
   }
   elsif(($ncol_head > 0) && ($ncol_data == 0)) { 
     $ncol = $ncol_head;
@@ -1025,17 +1093,17 @@ sub ofile_TableHumanOutput {
     $ncol = $ncol_data;
   }
   else { 
-    ofile_FAIL("ERROR in $sub_name, data num columns ($ncol_data) differs from header num columns ($ncol_head)", undef, 1, $FH_HR);
+    ofile_FAIL("ERROR in $sub_name, data num columns ($ncol_data) differs from header num columns ($ncol_head)", 1, $FH_HR);
   }
 
   # cljust_AR must be undef, or have $ncol values all of which must be '0' or '1'
   if(defined $cljust_AR) { 
     if(scalar(@{$cljust_AR}) != $ncol) { 
-      ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol columns, but column left justification array has data for " . scalar(@{$cljust_AR}) . " columns", undef, 1, $FH_HR);
+      ofile_FAIL("ERROR in $sub_name, data row 1 has $ncol columns, but column left justification array has data for " . scalar(@{$cljust_AR}) . " columns", 1, $FH_HR);
     }
     for($c = 0; $c < $ncol; $c++) { 
       if(($cljust_AR->[$c] != "0") && ($cljust_AR->[$c] != "1")) { 
-        ofile_FAIL("ERROR in $sub_name, cljust_AR column " . ($c+1) . " value is " . $cljust_AR->[$c] . ", but it must be 0 or 1", undef, 1, $FH_HR);
+        ofile_FAIL("ERROR in $sub_name, cljust_AR column " . ($c+1) . " value is " . $cljust_AR->[$c] . ", but it must be 0 or 1", 1, $FH_HR);
       }
     }
   }
