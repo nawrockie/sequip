@@ -222,11 +222,12 @@ sub sqf_FeatureTableParse {
         else { 
           ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to parse header line:\n$line\n", 1, $FH_HR);
         }
-        $feature  = undef; 
-        $coords   = undef;
-        $trunc5 = undef;
-        $trunc3 = undef;
-        
+        $feature = undef; 
+        $coords  = undef;
+        $trunc5  = undef;
+        $trunc3  = undef;
+        $ftr_idx = -1;
+
         # update '$prv_*' values that we use to make sure line order makes sense
         $prv_was_accn           = 1;
         $prv_was_coords_feature = 0;
