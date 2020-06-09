@@ -214,6 +214,15 @@ sub sqf_FeatureTableParse {
         $long_accver = $1;
         # accession line can occur after any other line type, so we don't have to check if line order makes sense for this case
 
+        # if our previous line was coords_feature or coords_only, we need to store the feature from that previous line
+        if(($prv_was_coords_feature) || ($prv_was_coords_only)) { 
+          $ftr_idx++;
+          sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "type",   $feature, $FH_HR);
+          sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "coords", $coords,  $FH_HR);
+          if($trunc5) { sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "trunc5", 1, $FH_HR); }
+          if($trunc3) { sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "trunc3", 1, $FH_HR); }
+        }
+
         # determine accession and version, e.g. NC_001359.1 in above example
         if($long_accver =~ /[^\|]*\|([^\|]+)\.(\d+)\|/) { 
           $acc = $1;
