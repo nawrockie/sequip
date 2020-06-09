@@ -211,6 +211,8 @@ sub sqf_FeatureTableParse {
         # ACCESSION LINE
         # example:
         #>Feature ref|NC_001359.1|    
+        # or
+        #>Feature anyseqname
         $long_accver = $1;
         # accession line can occur after any other line type, so we don't have to check if line order makes sense for this case
 
@@ -229,7 +231,8 @@ sub sqf_FeatureTableParse {
           $ver = $2;
         }
         else { 
-          ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to parse header line:\n$line\n", 1, $FH_HR);
+          $acc = $long_accver;
+          #ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to parse header line:\n$line\n", 1, $FH_HR);
         }
         @{$ftr_info_HAHR->{$acc}} = (); # initialize array
         $feature = undef; 
