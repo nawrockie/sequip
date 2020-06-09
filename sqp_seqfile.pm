@@ -231,6 +231,7 @@ sub sqf_FeatureTableParse {
         else { 
           ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to parse header line:\n$line\n", 1, $FH_HR);
         }
+        @{$ftr_info_HAHR->{$acc}} = (); # initialize array
         $feature = undef; 
         $coords  = undef;
         $trunc5  = undef;
