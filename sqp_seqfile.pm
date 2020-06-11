@@ -211,8 +211,19 @@ sub sqf_FeatureTableParse {
         # ACCESSION LINE
         # example:
         #>Feature ref|NC_001359.1|    
+        # or
+        #>Feature anyseqname
         $long_accver = $1;
         # accession line can occur after any other line type, so we don't have to check if line order makes sense for this case
+
+        # if our previous line was coords_feature or coords_only, we need to store the feature from that previous line
+        if(($prv_was_coords_feature) || ($prv_was_coords_only)) { 
+          $ftr_idx++;
+          sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "type",   $feature, $FH_HR);
+          sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "coords", $coords,  $FH_HR);
+          if($trunc5) { sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "trunc5", 1, $FH_HR); }
+          if($trunc3) { sqf_StoreQualifierValue(\@{$ftr_info_HAHR->{$acc}}, $ftr_idx, "trunc3", 1, $FH_HR); }
+        }
 
         # determine accession and version, e.g. NC_001359.1 in above example
         if($long_accver =~ /[^\|]*\|([^\|]+)\.(\d+)\|/) { 
@@ -220,13 +231,16 @@ sub sqf_FeatureTableParse {
           $ver = $2;
         }
         else { 
-          ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to parse header line:\n$line\n", 1, $FH_HR);
+          $acc = $long_accver;
+          #ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to parse header line:\n$line\n", 1, $FH_HR);
         }
-        $feature  = undef; 
-        $coords   = undef;
-        $trunc5 = undef;
-        $trunc3 = undef;
-        
+        @{$ftr_info_HAHR->{$acc}} = (); # initialize array
+        $feature = undef; 
+        $coords  = undef;
+        $trunc5  = undef;
+        $trunc3  = undef;
+        $ftr_idx = -1;
+
         # update '$prv_*' values that we use to make sure line order makes sense
         $prv_was_accn           = 1;
         $prv_was_coords_feature = 0;
