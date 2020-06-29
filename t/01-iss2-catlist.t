@@ -2,6 +2,10 @@ use strict;
 use warnings FATAL => 'all';
 use Test::More tests => 13;
 
+# max length of a file name is 255 bytes
+# max length of a file name plus path is 4096 bytes
+# This length matches the PATH_MAX that is supported by the operating system.
+
 BEGIN {
     use_ok( 'sqp_opts'  ) || print "Bail out!\n";
     use_ok( 'sqp_utils' ) || print "Bail out!\n";
@@ -60,11 +64,11 @@ push(@nfiles_A,   "10000");
 push(@nlines_A,   "3");
 push(@outfile_A,  "thisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200cha");
 
-push(@desc_A,     "5000 files with 7+ char name of 2 lines");
-push(@nfiles_A,   "5000");
+push(@desc_A,     "5552 files with 7+ char name of 2 lines (tests skipping rarely skipped loop)");
+push(@nfiles_A,   "5552");
 push(@nlines_A,   "2");
 push(@outfile_A,  "f5kl2");
-                   
+
 my $ntests = scalar(@desc_A);
 for($t = 0; $t < $ntests; $t++) { 
   @exp_filelines_A = ();
