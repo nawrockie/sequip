@@ -1,6 +1,6 @@
 use strict;
 use warnings FATAL => 'all';
-use Test::More tests => 11;
+use Test::More tests => 13;
 
 BEGIN {
     use_ok( 'sqp_opts'  ) || print "Bail out!\n";
@@ -55,6 +55,11 @@ push(@nfiles_A,   "1000");
 push(@nlines_A,   "3");
 push(@outfile_A,  "thisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200cha");
 
+push(@desc_A,     "10000 files with 200+ char name of 3 lines");
+push(@nfiles_A,   "10000");
+push(@nlines_A,   "3");
+push(@outfile_A,  "thisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200cha");
+
 push(@desc_A,     "5000 files with 7+ char name of 2 lines");
 push(@nfiles_A,   "5000");
 push(@nlines_A,   "2");
@@ -67,7 +72,7 @@ for($t = 0; $t < $ntests; $t++) {
   @cur_file_A = ();
   for($i = 1; $i <= $nfiles_A[$t]; $i++) { 
     my $cur_outfile = $outfile_A[$t] . "." . $i;
-    open(OUT, ">", $cur_outfile);
+    open(OUT, ">", $cur_outfile) || die "ERROR unable to open $cur_outfile for writing"; 
     for($j = 1; $j <= $nlines_A[$t]; $j++) { 
       print OUT $j . "\n";
       push(@exp_filelines_A, $j);
