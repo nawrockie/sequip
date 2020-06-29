@@ -138,6 +138,11 @@ sub utl_ConcatenateListOfFiles {
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
   my ($file_AR, $outfile, $caller_sub_name, $opt_HHR, $FH_HR) = (@_);
 
+  if((! defined $file_AR) || (scalar(@{$file_AR}) == 0)) { 
+    ofile_FAIL(sprintf("ERROR in $sub_name%s, array of file names to concatenate is undefined or empty", 
+                        (defined $caller_sub_name) ? " called by $caller_sub_name" : ""), 1, $FH_HR);
+  }
+
   if(utl_AFindNonNumericValue($file_AR, $outfile, $FH_HR) != -1) { 
     ofile_FAIL(sprintf("ERROR in $sub_name%s, output file name $outfile exists in list of files to concatenate", 
                         (defined $caller_sub_name) ? " called by $caller_sub_name" : ""), 1, $FH_HR);
