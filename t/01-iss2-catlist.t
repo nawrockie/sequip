@@ -1,6 +1,6 @@
 use strict;
 use warnings FATAL => 'all';
-use Test::More tests => 7;
+use Test::More tests => 11;
 
 BEGIN {
     use_ok( 'sqp_opts'  ) || print "Bail out!\n";
@@ -50,10 +50,15 @@ push(@nfiles_A,   "100");
 push(@nlines_A,   "1000");
 push(@outfile_A,  "f100l1000");
 
-push(@desc_A,     "1000 files with 200+ char name of 10 lines");
+push(@desc_A,     "1000 files with 200+ char name of 3 lines");
 push(@nfiles_A,   "1000");
-push(@nlines_A,   "10");
+push(@nlines_A,   "3");
 push(@outfile_A,  "thisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200chathisfilenameis200cha");
+
+push(@desc_A,     "5000 files with 7+ char name of 2 lines");
+push(@nfiles_A,   "5000");
+push(@nlines_A,   "2");
+push(@outfile_A,  "f5kl2");
                    
 my $ntests = scalar(@desc_A);
 for($t = 0; $t < $ntests; $t++) { 
@@ -74,17 +79,17 @@ for($t = 0; $t < $ntests; $t++) {
   utl_ConcatenateListOfFiles(\@cur_file_A, $outfile_A[$t], "01-iss2-catlist.t", \%opt_HH, undef);
   # read concatenate file into an array
   utl_FileLinesToArray($outfile_A[$t], 0, \@cur_filelines_A, undef);
-
+  
   # check number of lines matches expected
   $exp_nlines = scalar(@exp_filelines_A);
   $cur_nlines = scalar(@cur_filelines_A);
   is($cur_nlines, $exp_nlines, "utl_ConcatenateListOfFiles() correct line numbers: $desc_A[$t]");
-
+  
   # check actual lines match expected
   $exp_str = utl_AToNewLineDelimString(\@exp_filelines_A);
   $cur_str = utl_AToNewLineDelimString(\@cur_filelines_A);
   is($exp_str, $cur_str, "utl_ConcatenateListOfFiles() correct output: $desc_A[$t]");
-
+  
   push(@to_remove_A, @cur_file_A); # these will be removed by utl_ConcatenateListOfFiles() unless something goes wrong, in which case we still want to remove them, because it's probably a lot of files
   push(@to_remove_A, $outfile_A[$t]); 
 }
