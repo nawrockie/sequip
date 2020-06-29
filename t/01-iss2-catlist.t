@@ -1,6 +1,6 @@
 use strict;
 use warnings FATAL => 'all';
-use Test::More tests => 13;
+use Test::More tests => 15;
 
 # max length of a file name is 255 bytes
 # max length of a file name plus path is 4096 bytes
@@ -44,6 +44,11 @@ my ($t, $i, $j); # counters
 @nlines_A  = ();
 @outfile_A = ();
 @desc_A    = ();
+push(@desc_A,     "1 files with 7+ char name of 100 lines");
+push(@nfiles_A,   "1");
+push(@nlines_A,   "100");
+push(@outfile_A,  "f1l100");
+
 push(@desc_A,     "10 files with 7+ char name of 100 lines");
 push(@nfiles_A,   "10");
 push(@nlines_A,   "100");
