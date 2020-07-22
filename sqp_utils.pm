@@ -102,9 +102,18 @@ sub utl_ArrayOfHashesToArray {
 # Subroutine:  utl_ConcatenateListOfFiles()
 # Incept:      EPN, Sun Apr 24 08:08:15 2016
 #
-# Purpose:     Concatenate a list of files into one file.
-#              If the list has more than 500 files, split
-#              up job into concatenating 500 at a time.
+# Purpose:     Concatenate a list of files into one file.  If the list is
+#              more than 20K characters, break it down into multiple 
+#              cat calls of at most 20K characters each, and call this 
+#              subroutine recursively to concanenate them.
+#
+#              To allow recursive calls without clobbering files
+#              created in previous calls, we use a unique string to
+#              append to the output file names. This is derived from
+#              the $caller_sub_name array. If that is undef, we use
+#              'rec0' as the unique string, if it ends with 'rec<d>'
+#              we know we have a recursive call and use 'rec<d+1>' in
+#              the recursive call.
 # 
 #              We remove all files that we concatenate unless
 #              --keep option is on in %{$opt_HHR}.
@@ -121,12 +130,7 @@ sub utl_ArrayOfHashesToArray {
 # 
 # Dies:        If one of the cat commands fails.
 #              If $outfile is in @{$file_AR}
-#              If @{$file_AR} contains more than 800*800 files
-#              (640K) if so, we may need to call this function
-#              recursively twice (that is, recursive call will
-#              also call itself recursively) and we don't have 
-#              a sophisticated enough temporary file naming
-#              strategy to handle that robustly.
+#
 ################################################################# 
 sub utl_ConcatenateListOfFiles { 
   my $nargs_expected = 5;
@@ -134,76 +138,78 @@ sub utl_ConcatenateListOfFiles {
   if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
   my ($file_AR, $outfile, $caller_sub_name, $opt_HHR, $FH_HR) = (@_);
 
+  if((! defined $file_AR) || (scalar(@{$file_AR}) == 0)) { 
+    ofile_FAIL(sprintf("ERROR in $sub_name%s, array of file names to concatenate is undefined or empty", 
+                        (defined $caller_sub_name) ? " called by $caller_sub_name" : ""), 1, $FH_HR);
+  }
+
   if(utl_AFindNonNumericValue($file_AR, $outfile, $FH_HR) != -1) { 
     ofile_FAIL(sprintf("ERROR in $sub_name%s, output file name $outfile exists in list of files to concatenate", 
                         (defined $caller_sub_name) ? " called by $caller_sub_name" : ""), 1, $FH_HR);
   }
 
-  # first, convert @{$file_AR} array into a 2D array of file names, each of which has 
-  # a max of 800 elements, we'll concatenate each of these lists separately
-  my $max_nfiles = 800;
-  my $nfiles = scalar(@{$file_AR});
-
-  if($nfiles > ($max_nfiles * $max_nfiles)) { 
-    ofile_FAIL(sprintf("ERROR in $sub_name%s, trying to concatenate %d files, our limit is %d", 
-                       (defined $caller_sub_name) ? " called by $caller_sub_name" : "", $nfiles, $max_nfiles * $max_nfiles), 
-               1, $FH_HR);
+  # determine unique string for tmp naming files that allows
+  # proper handling of recursive calls without namespace clashes
+  my $rec_idx = 0;
+  if((defined $caller_sub_name) && ($caller_sub_name =~ /rec(\d+)$/)) { 
+    # caller was this subroutine, using $1 as the $rec_idx
+    $rec_idx = $1 + 1;
+    # e.g. if $caller_sub_name = 'utl_ConcatenateListOfFiles.rec2', then $rec_key set to 3
   }
-    
-  my ($idx1, $idx2); # indices in @{$file_AR}, and of secondary files
-  my @file_AA = ();
-  $idx2 = -1; # get's incremented to 0 in first loop iteration
-  for($idx1 = 0; $idx1 < $nfiles; $idx1++) { 
-    if(($idx1 % $max_nfiles) == 0) { 
-      $idx2++; 
-      @{$file_AA[$idx2]} = (); # initialize
-    }
-    push(@{$file_AA[$idx2]}, $file_AR->[$idx1]);
-  }
-  
-  my $nconcat = scalar(@file_AA);
-  my @tmp_outfile_A = (); # fill this with names of temporary files we create
-  my $tmp_outfile; # name of an output file we'll create
-  for($idx2 = 0; $idx2 < $nconcat; $idx2++) { 
-    if($nconcat == 1) { # special case, we don't need to create any temporary files
-      $tmp_outfile = $outfile;
-    }
-    else { 
-      $tmp_outfile = $outfile . ".tmp" . ($idx2+1); 
-      # make sure this file does not exist in @{$file_AA[$idx2]} to avoid klobbering
-      # if it does, continue to append .tmp($idx2+1) until it doesn't
-      while(utl_AFindNonNumericValue($file_AA[$idx2], $tmp_outfile, $FH_HR) != -1) { 
-        $tmp_outfile .= ".tmp" . ($idx2+1); 
-      }
-    }
-    # create the concatenate command
-    my $cat_cmd = "cat ";
-    foreach my $tmp_file (@{$file_AA[$idx2]}) {
-      $cat_cmd .= $tmp_file . " ";
-    }
-    $cat_cmd .= "> $tmp_outfile";
 
-    # execute the command
+  my $nchar_limit = 20000; # 20K characters, hard-coded
+  my $tmp_outfile = undef; # name of temporary outfile, only used if needed
+  my $tot_nfiles = scalar(@{$file_AR}); # total number of files in @file_A
+  my $cur_nfiles = 0; # current number of files in cat call
+  my $i = 0;          # index of file in @{$file_AR}
+
+  my $outfile_len = length($outfile); # length of output file name
+  my $cat_cmd = "cat ";
+  my $tmp_idx = 1;
+  my @tmp_outfile_A = (); # array of temporary files we created to avoid too long of a command
+
+  for($i = 0; $i < $tot_nfiles; $i++) { 
+    $cat_cmd .= $file_AR->[$i] . " ";
+    $cur_nfiles++;
+    if(($cur_nfiles >= 2) && # we're cat'ing at least 2 files
+       (length($cat_cmd) + 2 + $outfile_len + 4 + length ($rec_idx) + 1 + length($tmp_idx)) > $nchar_limit) { # length of command exceeds $nchar_limit (2 = length("> "), 4 = length(".rec")), 1 = length(".")
+      # finish the cat command and execute it to create a tmp file we'll cat in a recursive call
+      $tmp_outfile = $outfile . ".rec" . $rec_idx . "." . $tmp_idx; 
+      $cat_cmd .= "> $tmp_outfile";
+      
+      # execute the command
+      utl_RunCommand($cat_cmd, opt_Get("-v", $opt_HHR), 0, $FH_HR);
+      push(@tmp_outfile_A, $tmp_outfile);
+
+      $tmp_idx++;
+      $cat_cmd = "cat ";
+      $cur_nfiles = 0;
+    }
+  }
+  if(scalar(@tmp_outfile_A) == 0) { 
+    # we did not create any temporary files
+    # finish the command and execute it
+    $cat_cmd .= "> $outfile";
     utl_RunCommand($cat_cmd, opt_Get("-v", $opt_HHR), 0, $FH_HR);
-
-    # add it to the array of temporary files
-    push(@tmp_outfile_A, $tmp_outfile); 
-  }
-
-  if(scalar(@tmp_outfile_A) > 1) { 
-    # we created more than one temporary output file, concatenate them
-    # by calling this function again
-    utl_ConcatenateListOfFiles(\@tmp_outfile_A, $outfile, (defined $caller_sub_name) ? $caller_sub_name . ":" . $sub_name : $sub_name, $opt_HHR, $FH_HR);
-  }
-
-  if(! opt_Get("--keep", $opt_HHR)) { 
-    # remove all of the original files, be careful to not remove @tmp_outfile_A
-    # because the recursive call will handle that
-    foreach my $file_to_remove (@{$file_AR}) { 
-      utl_FileRemoveUsingSystemRm($file_to_remove, 
-                                  (defined $caller_sub_name) ? $caller_sub_name . ":" . $sub_name : $sub_name, 
-                                  $opt_HHR, $FH_HR);
+  }    
+  else { 
+    # we did create at least one temporary file, we need to call this subroutine recursively
+    # first finish the final tmp file if nec
+    if($cur_nfiles > 0) { 
+      $tmp_outfile = $outfile . ".rec" . $rec_idx . "." . $tmp_idx; 
+      $cat_cmd .= "> $tmp_outfile";
+      
+      # execute the command
+      utl_RunCommand($cat_cmd, opt_Get("-v", $opt_HHR), 0, $FH_HR);
+      push(@tmp_outfile_A, $tmp_outfile);
     }
+    my $tmp_caller_str = $sub_name . ".rec" . $rec_idx;
+    utl_ConcatenateListOfFiles(\@tmp_outfile_A, $outfile, (defined $caller_sub_name) ? $caller_sub_name . ":" . $tmp_caller_str : $tmp_caller_str, $opt_HHR, $FH_HR);
+  }
+
+  # remove all original files (recursive call(s) will remove any tmp files we created)
+  if(! opt_Get("--keep", $opt_HHR)) { 
+    utl_FileRemoveList($file_AR, $sub_name, $opt_HHR, $FH_HR);
   }
 
   return;
