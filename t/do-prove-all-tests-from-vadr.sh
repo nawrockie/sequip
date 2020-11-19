@@ -5,8 +5,8 @@ CURRETVAL=0;
 
 # we require 0 or 1 args, if 1 arg, it must be 'teamcity'
 do_teamcity=0
-if [ $# != 0 ]; then
-    if [ $# -gt 1 ] || [ $1 != "teamcity" ]; then 
+if [ "$#" -ne 0 ]; then
+    if [ "$#" -gt 1 ] || [ "$1" != "teamcity" ]; then 
         echo "Usage:"
         echo "$0"
         echo "OR"
@@ -25,26 +25,26 @@ fi
 for test in \
     01-iss2-catlist.t \
 ; do
-    if [ $do_teamcity == 1 ]; then
+    if [ "$do_teamcity" -eq 1 ]; then
         echo "##teamcity[testStarted name=\"$test\" captureStandardOutput='true']"
     fi
 
     prove -v $VADRSEQUIPDIR/t/$test;
     CURRETVAL=$?
 
-    if [ $do_teamcity == 1 ]; then 
-        if [ $CURRETVAL != 0 ]; then
+    if [ "$do_teamcity" -eq 1 ]; then 
+        if [ "$CURRETVAL" -ne 0 ]; then
             echo "##teamcity[testFailed name=\"$test\" message=\"v-test.pl failure\"]"
         fi
         echo "##teamcity[testFinished name=\"$test\"]"
     fi
 
-    if [ $CURRETVAL != 0 ]; then
+    if [ "$CURRETVAL" -ne 0 ]; then
         RETVAL=1
     fi
 done
 
-if [ $RETVAL == 0 ]; then
+if [ "$RETVAL" -eq 0 ]; then
    echo "Success: all tests passed"
    exit 0
 else 
