@@ -910,6 +910,253 @@ sub sqf_FastaWriteSequence {
 }
 
 #################################################################
+# Subroutine: sqf_FastaFileSplitRandomly
+# Incept:     EPN, Fri Jul  6 09:56:37 2018
+#
+# Purpose:    Given a fasta file and a hash with sequence lengths
+#             for all sequences in the file, split the file into
+#             <n> files randomly, such that each sequence is randomly
+#             placed in one of the <n> files with the exception that
+#             the first i=1 to <n> sequences are placed in files 
+#             1 to <n> (so that each file gets at least one sequence).
+#
+# Arguments:
+#   $fa_file:     the fasta file
+#   $seqlen_HR:   ref to hash, key is sequence name, value is sequence length
+#   $out_dir:     output directory for placing sequence files
+#   $tot_nseq:    total number of sequences
+#   $tot_nres:    total number of nucleotides in all sequences
+#   $targ_nres:   target number of residues per file
+#   $rng_seed:    seed for srand(), to seed RNG, undef to not seed it
+#   $FH_HR:       ref to hash of file handles, including "cmd"
+# 
+# Returns:  Number of files created.
+# 
+# Dies:     If we trouble parsing/splitting the fasta file
+#
+#################################################################
+sub sqf_FastaFileSplitRandomly { 
+  my $sub_name = "sqf_FastaFileSplitRandomly";
+  my $nargs_expected = 8;
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+
+  #my $random_number = int(rand(100));
+  my ($fa_file, $seqlen_HR, $out_dir, $tot_nseq, $tot_nres, $targ_nres, $rng_seed, $FH_HR) = @_;
+
+  my $do_debug = 0;
+
+  my $in_FH = undef;
+  open($in_FH, $fa_file) || ofile_FileOpenFailure($fa_file, $sub_name, $!, "reading", $FH_HR);
+  
+  if(defined $rng_seed) { srand($rng_seed); }
+
+  # determine number of files to create
+  my $nfiles = int($tot_nres / $targ_nres);
+  if($nfiles < 1) { $nfiles = 1; }
+  # nfiles must be less than or equal to: $nseq and 300
+  if($nfiles > $tot_nseq) { $nfiles = $tot_nseq; }
+  if($nfiles > 300)       { $nfiles = 300; }
+  if($nfiles <= 0) { 
+    ofile_FAIL("ERROR in $sub_name, trying to make $nfiles files", 1, $FH_HR);
+  }
+  $targ_nres = int($tot_nres / $nfiles);
+
+  # We need to open up all output file handles at once, we'll randomly
+  # choose which one to print each sequence to. We need to keep track
+  # of total length of all sequences output to each file so we know
+  # when to close them. Once a file is closed, we won't choose to
+  # write to it anymore, using the @map_A array as follows:
+  #
+  # We define an array @r2f_map_A with an element for each of the $nfiles
+  # output files. For each sequence, we randomly choose a number
+  # between 0 and $nfiles-1 to pick which output file to write the
+  # sequence to. Initially $r2f_map_A[$i] == $i, but when if we close file
+  # $i we set $r2f_map_A[$i] to $r2f_map_A[$nremaining-1], then choose a
+  # random int between 0 and $nremaining-1. This gets us a random
+  # sample without replacement. 
+  #
+  # @f2r_map_A is the inverse of @r2f_mapA, which we need only so that
+  # we can guarantee that each file gets at least 1 sequence.
+  # 
+  my @r2f_map_A = ();  # map of random index to file number, $r2f_map_A[$ridx] = file number that random choice $ridx pertains to
+  my @f2r_map_A = ();  # map of file number to random index, $f2r_map_A[$fidx] = random choice $ridx that file number $fidx pertains to
+  my @nres_per_out_A = ();
+  my $nres_tot_out = 0;  # total number of sequences output thus far
+  my @nseq_per_out_A = ();
+  my @out_filename_A = (); # array of file names
+  my @out_FH_A = (); # [0..$nfiles-1], the actual open file handles
+  my @isopen_A = (); # [0..$i..$nfiles-1], '1' if file $i is open, '0' if it has been closed
+  my $nopen = 0; # number of files that are still open
+  my $checkpoint_fraction_step = 0.05; # if($do_randomize) we will output update each time this fraction of total sequence has been output
+  my $checkpoint_fraction = $checkpoint_fraction_step;
+  my $checkpoint_nres = $checkpoint_fraction * $tot_nres;
+  my $fidx; # file index of current file in @out_filename_A and file handle in @out_FH_A
+  my $nres_this_seq = 0; # number of residues in current file
+  
+  # variables only used if $do_randomize
+  my $ridx; # randomly selected index in @map_A for current sequence
+  my $FH; # pointer to current file handle to print to
+  my $nseq_remaining = $tot_nseq;
+  my $nseq_output    = 0;
+  my $fa_file_tail = ribo_RemoveDirPath($fa_file);
+
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { $r2f_map_A[$fidx] = $fidx; }
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { $f2r_map_A[$fidx] = $fidx; }
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { $nres_per_out_A[$fidx] = 0; }
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { $nseq_per_out_A[$fidx] = 0; }
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { $out_filename_A[$fidx] = $out_dir . "/" . $fa_file_tail . "." . ($fidx+1); } 
+
+  # open up all output file handles, else open only the first
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { 
+    open($out_FH_A[$fidx], ">", $out_filename_A[$fidx]) || ofile_FileOpenFailure($out_filename_A[$fidx], $sub_name, $!, "writing", $FH_HR);
+    $isopen_A[$fidx] = 1;
+  }
+  $nopen = $nfiles; # will be decremented as we close files
+
+  # read file until we see the first header line
+  my ($next_header_line, $next_seqname) = sqf_FastaFileReadAndOutputNextSeq($in_FH, undef, $FH_HR); 
+  # this will die if any non-whitespace characters exist before first header line
+
+  while($nseq_remaining > 0) { 
+    if(! defined $next_header_line) { 
+      ofile_FAIL("ERROR in $sub_name, read too few sequences in $fa_file, read expected $tot_nseq", 1, $FH_HR); 
+    }
+    if(! exists $seqlen_HR->{$next_seqname}) { 
+      ofile_FAIL("ERROR in $sub_name, no sequence length information exists for $next_seqname", 1, $FH_HR);
+    }
+    $nres_this_seq = $seqlen_HR->{$next_seqname};
+
+    # first $nfiles sequences go to file $nseq_output so we guarantee we have >= 1 seq per file, 
+    # remaining seqs are randomly placed
+    if($nseq_output < $nfiles) { 
+      $fidx = $nseq_output;
+      $ridx = $f2r_map_A[$fidx];
+    }
+    else { 
+      $ridx = int(rand($nopen)); 
+      $fidx = $r2f_map_A[$ridx];
+    }
+    $FH = $out_FH_A[$fidx];
+
+    # output seq
+    print $FH $next_header_line; 
+    ($next_header_line, $next_seqname) = sqf_FastaFileReadAndOutputNextSeq($in_FH, $FH, $FH_HR);
+    
+    $nseq_remaining--;
+    $nseq_output++;
+    
+    # update counts of sequences and residues for the file we just printed to
+    $nres_per_out_A[$fidx] += $nres_this_seq;
+    $nseq_per_out_A[$fidx]++;
+    $nres_tot_out += $nres_this_seq;
+
+    # if we've reached our checkpoint output update
+    if($do_debug && ($nres_tot_out > $checkpoint_nres)) { 
+      my $nfiles_above_fract = 0;
+      for(my $tmp_fidx = 0; $tmp_fidx < $nfiles; $tmp_fidx++) { 
+        if($nres_per_out_A[$tmp_fidx] > ($checkpoint_fraction * $targ_nres)) { $nfiles_above_fract++; }
+      }
+      $checkpoint_fraction += $checkpoint_fraction_step;
+      $checkpoint_nres = $checkpoint_fraction * $tot_nres;
+    }
+
+    # check if we need to close this file now, if so close it and open a new one (if nec)
+    if(($nres_per_out_A[$fidx] >= $targ_nres) || ($nseq_remaining == 0)) { 
+      if(($nopen > 1) || ($nseq_remaining == 0)) { 
+        # don't close the final file unless we have zero sequences left
+        close($out_FH_A[$fidx]);
+        $isopen_A[$fidx] = 0;
+        if($do_debug) { printf("$out_filename_A[$fidx] finished (%d seqs, %d residues)\n", $nseq_per_out_A[$fidx], $nres_per_out_A[$fidx]); }
+        # update r2f_map_A so we can no longer choose the file handle we just closed 
+        if($ridx != ($nopen-1)) { # edge case
+          $r2f_map_A[$ridx] = $r2f_map_A[($nopen-1)];
+        }
+        $f2r_map_A[$r2f_map_A[($nopen-1)]] = $ridx; 
+        $r2f_map_A[($nopen-1)] = -1; # this random index is now invalid
+        $f2r_map_A[$fidx]      = -1; # this file is now closed
+        $nopen--;
+      }
+    }
+  }
+
+  # go through and close any files that are still open
+  for($fidx = 0; $fidx < $nfiles; $fidx++) { 
+    if($isopen_A[$fidx] == 1) { 
+      # file still open, close it
+      close($out_FH_A[$fidx]);
+      if($do_debug) { printf("$out_filename_A[$fidx] finished (%d seqs, %d residues)\n", $nseq_per_out_A[$fidx], $nres_per_out_A[$fidx]); }
+    }
+  }
+
+  return $nfiles;
+}
+
+#################################################################
+# Subroutine: sqf_FastaFileReadAndOutputNextSeq
+# Incept:     EPN, Fri Jul  6 11:04:52 2018
+#
+# Purpose:    Given an open input file handle for a fasta sequence
+#             and an open output file handle, read the next sequence and
+#             and output it to the output file, by outputting all lines
+#             we read until the next header line. Then return the
+#             header line we stopped reading on.
+#             If $out_FH is undef, do not output, which allows this
+#             function to be called to return the first header line
+#             of the file, but if $out_FH is undef, then require
+#             that all lines read before the header line are empty,
+#             else die.
+#
+# Arguments:
+#   $in_FH:       input file handle
+#   $out_FH:      output file handle, can be undef
+#   $FH_HR:       ref to hash of file handles, for printing errors if we die"
+# 
+# Returns:  2 values:
+#           $next_header_line: next header line in the file, undef 
+#                              if we do not read one before end of the file
+#           $next_seqname:     sequence name on next header line
+#
+# Dies:     If $out_FH is undef and there are non-whitespace characters
+#           prior to the first header line read.
+#           If $next_header_line is defined and we can't parse it to get the
+#           sequence name.
+#################################################################
+sub sqf_FastaFileReadAndOutputNextSeq { 
+  my $sub_name = "sqf_FastaFileReadAndOutputNextSeq";
+  my $nargs_expected = 3;
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+
+  my ($in_FH, $out_FH, $FH_HR) = @_;
+
+  my $line = undef;
+  $line = <$in_FH>;
+  while((defined $line) && ($line !~ m/^\>/)) { 
+    # does this line have any nonwhitespace characters? 
+    if(! defined $out_FH) { 
+      chomp $line;
+      if($line =~ m/\S/) { 
+        ofile_FAIL("ERROR in $sub_name, read line with non-whitespace character when none were expected:\n$line", 1, $FH_HR);
+      }
+    }
+    else { 
+      print $out_FH $line;
+    }
+    $line = <$in_FH>; 
+  }
+  my $seqname = undef;
+  if(defined $line) { 
+    if($line =~ m/^\>(\S+)/) { 
+      $seqname = $1;
+    }
+    else { 
+      ofile_FAIL("ERROR in $sub_name, unable to parse sequence name from header line: $line", 1, $FH_HR);
+    }
+  }
+  
+  return ($line, $seqname);
+}
+
+#################################################################
 # Subroutine: sqf_EslReformatRun()
 # Incept:     EPN, Fri Mar 15 12:56:04 2019
 #
