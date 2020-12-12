@@ -2054,7 +2054,7 @@ sub utl_FileMd5 {
                         (defined $caller_sub_name) ? " called by $caller_sub_name" : ""), 1, $FH_HR);
   }
 
-  my $out_file = removeDirPath($file . ".md5sum");
+  my $out_file = utl_RemoveDirPath($file . ".md5sum");
   utl_RunCommand("md5sum $file > $out_file", opt_Get("-v", $opt_HHR), 0, $FH_HR);
 
   open(MD5, $out_file) || ofile_FileOpenFailure($out_file, $sub_name, $!, "reading", $FH_HR);
