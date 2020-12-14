@@ -62,6 +62,7 @@ use Time::HiRes qw(gettimeofday);
 #   ofile_OutputBanner()
 #   ofile_OutputDividingLine()
 #   ofile_RemoveDirPath()
+#   ofile_GetDirPath()
 #   ofile_SecondsSinceEpoch()
 #   ofile_FormatTimeString()
 #   ofile_MaxLengthScalarValueInHash()
@@ -122,7 +123,7 @@ sub ofile_OpenAndAddFileToOutputInfo {
 # Purpose:    Add information about a created output file (not open) to
 #             the %{$ofile_info_HHR data structure, for eventual
 #             output in ofile_OutputConclusionAndCloseFiles().
-#
+o#
 #             Most of the work is done by ofile_HelperAddFileToOutputInfo().
 #
 # Arguments:
@@ -771,6 +772,33 @@ sub ofile_RemoveDirPath {
   $fullpath =~ s/^.+\///;
 
   return $fullpath;
+}
+
+#################################################################
+# Subroutine : ofile_GetDirPath()
+# Incept:      EPN, Thu May  4 09:39:06 2017
+#              EPN, Mon Mar 15 10:17:11 2010 [ssu.pm:ReturnDirPath()]
+#
+# Purpose:     Given a file name return the directory path, with the final '/'
+#              For example: "foodir/foodir2/foo.stk" becomes "foodir/foodir2/".
+#
+# Arguments: 
+#   $orig_file: name of original file
+# 
+# Returns:     The string $orig_file with actual file name removed 
+#              or "./" if $orig_file is "".
+#
+################################################################# 
+sub ofile_GetDirPath {
+  my $narg_expected = 1;
+  my $sub_name = "ofile_GetDirPath()";
+  if(scalar(@_) != $narg_expected) { printf STDERR ("ERROR, in $sub_name, entered with %d != %d input arguments.\n", scalar(@_), $narg_expected); exit(1); } 
+  my $orig_file = $_[0];
+  
+  $orig_file =~ s/[^\/]+$//; # remove final string of non '/' characters
+  
+  if($orig_file eq "") { return "./";       }
+  else                 { return $orig_file; }
 }
 
 #################################################################
