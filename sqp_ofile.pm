@@ -1,4 +1,4 @@
-,#!/usr/bin/perl
+#!/usr/bin/perl
 #
 # sqp_ofile.pm
 # Eric Nawrocki
