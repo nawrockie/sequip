@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+,#!/usr/bin/perl
 #
 # sqp_ofile.pm
 # Eric Nawrocki
@@ -123,7 +123,7 @@ sub ofile_OpenAndAddFileToOutputInfo {
 # Purpose:    Add information about a created output file (not open) to
 #             the %{$ofile_info_HHR data structure, for eventual
 #             output in ofile_OutputConclusionAndCloseFiles().
-o#
+#
 #             Most of the work is done by ofile_HelperAddFileToOutputInfo().
 #
 # Arguments:
