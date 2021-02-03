@@ -4,16 +4,19 @@
 # Eric Nawrocki
 # EPN, Wed Apr  3 06:13:49 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:45:46 2019 [migrated from vadr's epn-seqfile.pm (as of commit 69b003d)]]
-# version: 0.07
+# version: 0.08
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
 
-require "sqp_ofile.pm";
-require "sqp_opts.pm";
-require "sqp_seq.pm";
-require "sqp_utils.pm";
+# NOTE: do not add any 'require' statements here, e.g. 'require
+# sqp_utils.pm' because the program that uses sequip must handle that
+# so each program can specify sequip from a specific directory defined
+# by a specific environment variable. This is how, for example,
+# ribovore can require a specific version of sequip on the same file
+# system that has vadr installed with a potentially different version
+# of sequip.
 
 #####################################################################
 # Data structures used in this module:
@@ -998,7 +1001,7 @@ sub sqf_FastaFileSplitRandomly {
   my $FH; # pointer to current file handle to print to
   my $nseq_remaining = $tot_nseq;
   my $nseq_output    = 0;
-  my $fa_file_tail = ribo_RemoveDirPath($fa_file);
+  my $fa_file_tail = ofile_RemoveDirPath($fa_file);
 
   for($fidx = 0; $fidx < $nfiles; $fidx++) { $r2f_map_A[$fidx] = $fidx; }
   for($fidx = 0; $fidx < $nfiles; $fidx++) { $f2r_map_A[$fidx] = $fidx; }

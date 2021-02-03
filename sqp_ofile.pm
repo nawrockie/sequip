@@ -4,11 +4,19 @@
 # Eric Nawrocki
 # EPN, Tue Jul  2 11:16:31 2019 [epn-ofile.pm started]
 # EPN, Tue Jul  2 11:43:02 2019 [migrated from epn-ofile]
-# version: 0.07
+# version: 0.08
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
+
+# NOTE: do not add any 'require' statements here, e.g. 'require
+# sqp_utils.pm' because the program that uses sequip must handle that
+# so each program can specify sequip from a specific directory defined
+# by a specific environment variable. This is how, for example,
+# ribovore can require a specific version of sequip on the same file
+# system that has vadr installed with a potentially different version
+# of sequip.
 
 #####################################################################
 # Data structures used in this module:
