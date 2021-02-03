@@ -5,13 +5,21 @@
 # EPN, Tue Oct 28 14:16:44 2014 [rnavore (rvr-options.pm)]
 # EPN, Tue Feb 23 13:34:31 2016 [incorporation into dnaorg]
 # EPN, Tue Jul  2 11:40:49 2019 [migrated from epn-options]
-# version: 0.07
+# version: 0.08
 #
 # Many aspects of this module are modelled after Easel's esl_getopts module
 # by Sean Eddy (bioeasel.org).
 # 
 use strict;
 use warnings;
+
+# NOTE: do not add any 'require' statements here, e.g. 'require
+# sqp_utils.pm' because the program that uses sequip must handle that
+# so each program can specify sequip from a specific directory defined
+# by a specific environment variable. This is how, for example,
+# ribovore can require a specific version of sequip on the same file
+# system that has vadr installed with a potentially different version
+# of sequip.
 
 #####################################################################
 # Data structures used in this module:

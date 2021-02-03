@@ -4,11 +4,19 @@
 # Eric Nawrocki
 # EPN, Tue Jul  2 11:16:31 2019 [epn-ofile.pm started]
 # EPN, Tue Jul  2 11:43:02 2019 [migrated from epn-ofile]
-# version: 0.07
+# version: 0.08
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
+
+# NOTE: do not add any 'require' statements here, e.g. 'require
+# sqp_utils.pm' because the program that uses sequip must handle that
+# so each program can specify sequip from a specific directory defined
+# by a specific environment variable. This is how, for example,
+# ribovore can require a specific version of sequip on the same file
+# system that has vadr installed with a potentially different version
+# of sequip.
 
 #####################################################################
 # Data structures used in this module:
@@ -62,6 +70,7 @@ use Time::HiRes qw(gettimeofday);
 #   ofile_OutputBanner()
 #   ofile_OutputDividingLine()
 #   ofile_RemoveDirPath()
+#   ofile_GetDirPath()
 #   ofile_SecondsSinceEpoch()
 #   ofile_FormatTimeString()
 #   ofile_MaxLengthScalarValueInHash()
@@ -771,6 +780,33 @@ sub ofile_RemoveDirPath {
   $fullpath =~ s/^.+\///;
 
   return $fullpath;
+}
+
+#################################################################
+# Subroutine : ofile_GetDirPath()
+# Incept:      EPN, Thu May  4 09:39:06 2017
+#              EPN, Mon Mar 15 10:17:11 2010 [ssu.pm:ReturnDirPath()]
+#
+# Purpose:     Given a file name return the directory path, with the final '/'
+#              For example: "foodir/foodir2/foo.stk" becomes "foodir/foodir2/".
+#
+# Arguments: 
+#   $orig_file: name of original file
+# 
+# Returns:     The string $orig_file with actual file name removed 
+#              or "./" if $orig_file is "".
+#
+################################################################# 
+sub ofile_GetDirPath {
+  my $narg_expected = 1;
+  my $sub_name = "ofile_GetDirPath()";
+  if(scalar(@_) != $narg_expected) { printf STDERR ("ERROR, in $sub_name, entered with %d != %d input arguments.\n", scalar(@_), $narg_expected); exit(1); } 
+  my $orig_file = $_[0];
+  
+  $orig_file =~ s/[^\/]+$//; # remove final string of non '/' characters
+  
+  if($orig_file eq "") { return "./";       }
+  else                 { return $orig_file; }
 }
 
 #################################################################

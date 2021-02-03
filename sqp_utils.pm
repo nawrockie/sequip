@@ -4,13 +4,19 @@
 # Eric Nawrocki
 # EPN, Tue Mar 19 13:35:06 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:53:49 2019 [migrated from vadr's epn-utils.pm (as of commit 69b003d)]]
-# version: 0.07
+# version: 0.08
 #
 use strict;
 use warnings;
 use Time::HiRes qw(gettimeofday);
 
-require "sqp_ofile.pm";
+# NOTE: do not add any 'require' statements here, e.g. 'require
+# sqp_utils.pm' because the program that uses sequip must handle that
+# so each program can specify sequip from a specific directory defined
+# by a specific environment variable. This is how, for example,
+# ribovore can require a specific version of sequip on the same file
+# system that has vadr installed with a potentially different version
+# of sequip.
 
 #################################################################
 # Subroutine: utl_RunCommand()
@@ -2054,7 +2060,7 @@ sub utl_FileMd5 {
                         (defined $caller_sub_name) ? " called by $caller_sub_name" : ""), 1, $FH_HR);
   }
 
-  my $out_file = removeDirPath($file . ".md5sum");
+  my $out_file = utl_RemoveDirPath($file . ".md5sum");
   utl_RunCommand("md5sum $file > $out_file", opt_Get("-v", $opt_HHR), 0, $FH_HR);
 
   open(MD5, $out_file) || ofile_FileOpenFailure($out_file, $sub_name, $!, "reading", $FH_HR);
