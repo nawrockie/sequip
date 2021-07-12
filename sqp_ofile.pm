@@ -1004,12 +1004,12 @@ sub ofile_FAIL {
     my $cmd_FH = $FH_HR->{"cmd"};
     my $log_FH = $FH_HR->{"log"};
     if(defined $cmd_FH) { 
-      print  $cmd_FH $errmsg;
-      printf $cmd_FH ("[fail]\n");
+      print $cmd_FH $errmsg;
+      print $cmd_FH ("[fail]\n");
     }
     if(defined $log_FH) {
-      print  $log_FH $errmsg;
-      printf $log_FH ("[fail]\n");
+      print $log_FH $errmsg;
+      print $log_FH ("[fail]\n");
     }
     # close each file handle
     foreach my $key (keys %{$FH_HR}) { 
@@ -1019,7 +1019,7 @@ sub ofile_FAIL {
     }
   }
   
-  printf STDERR $errmsg; 
+  print STDERR $errmsg; 
   exit 1;
 }
 
