@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Tue Mar 19 13:29:58 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:47:41 2019 [migrated from vadr's epn-seq.pm (as of commit 69b003d)]]
-# version: 0.08
+# version: 0.09
 #
 use strict;
 use warnings;
