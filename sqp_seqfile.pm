@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Wed Apr  3 06:13:49 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:45:46 2019 [migrated from vadr's epn-seqfile.pm (as of commit 69b003d)]]
-# version: 0.09
+# version: 0.10
 #
 use strict;
 use warnings;
@@ -195,6 +195,7 @@ sub sqf_FeatureTableParse {
   my $feature     = undef;   # a feature name, e.g. "CDS", or "gene"
   my $ftr_idx     = -1;      # number of features read for current sequence
   my $coords      = undef;   # coordinates
+  my $strand      = undef;   # strand of last segment read 
   my $trunc5      = undef;   # '1' if current feature is 5' truncated (start carrot, e.g. NC_031327:"<3281..4207")
   my $trunc3      = undef;   # '1' if current feature is 5' truncated (start carrot, e.g. "3281..>4207")
   my $line_idx    = 0;       # count of number of lines read in ftable
@@ -242,6 +243,7 @@ sub sqf_FeatureTableParse {
         $coords  = undef;
         $trunc5  = undef;
         $trunc3  = undef;
+        $strand  = undef;
         $ftr_idx = -1;
 
         # update '$prv_*' values that we use to make sure line order makes sense
@@ -271,14 +273,8 @@ sub sqf_FeatureTableParse {
         $trunc5 = ($start_carrot eq "<") ? 1 : 0;
         $trunc3 = ($stop_carrot  eq ">") ? 1 : 0;
 
-        if($start_coord == $stop_coord) { 
-          # ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to determine strand for single nucleotide span, line:\n$line\n", 1, $FH_HR);
-          # assume positive strand
-          $coords = "," . $start_coord . ".." . $stop_coord  . ":+"; 
-        }
-        $coords = $start_coord . ".." . $stop_coord;
-        if ($start_coord <= $stop_coord) { $coords .= ":+"; }
-        else                             { $coords .= ":-"; }
+        $strand = ($start_coord <= $stop_coord) ? "+" : "-"; # sets + strand for single nt
+        $coords = $start_coord . ".." . $stop_coord . ":" . $strand;
 
         # update '$prv_*' values that we use to make sure line order makes sense
         $prv_was_accn           = 0;
@@ -306,13 +302,12 @@ sub sqf_FeatureTableParse {
           $trunc3 = ($stop_carrot eq ">") ? 1 : 0;
 
           if($start_coord == $stop_coord) { 
-            #ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, unable to determine strand for single nucleotide span, line:\n$line\n", 1, $FH_HR);
-            # assume positive strand
-            $coords .= "," . $start_coord . ".." . $stop_coord  . ":+"; 
+            ; # single nt, use strand of previous segment
           }
-          $coords .= "," . $start_coord . ".." . $stop_coord;
-          if ($start_coord <= $stop_coord) { $coords .= ":+"; }
-          else                             { $coords .= ":-"; }
+          else { 
+            $strand = ($start_coord < $stop_coord) ? "+" : "-";
+          }
+          $coords .= "," . $start_coord . ".." . $stop_coord . ":" . $strand;
 
           # update '$prv_*' values that we use to make sure line order makes sense
           $prv_was_accn           = 0;
