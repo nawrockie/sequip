@@ -5,7 +5,7 @@
 # EPN, Tue Oct 28 14:16:44 2014 [rnavore (rvr-options.pm)]
 # EPN, Tue Feb 23 13:34:31 2016 [incorporation into dnaorg]
 # EPN, Tue Jul  2 11:40:49 2019 [migrated from epn-options]
-# version: 0.09
+# version: 0.10
 #
 # Many aspects of this module are modelled after Easel's esl_getopts module
 # by Sean Eddy (bioeasel.org).
