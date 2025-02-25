@@ -1299,7 +1299,7 @@ sub utl_HADump {
 
   my $undef2print = "!SEQUIP:undef!";
   foreach my $key1 (sort keys %{$HAR}) { 
-    if(defined $HAR->{$key1}) { 
+    if(! defined $HAR->{$key1}) { 
       print $FH ("*H*A{$key1}: $undef2print\n");
     }
     else { 
