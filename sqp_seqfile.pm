@@ -483,8 +483,9 @@ sub sqf_GenbankParse {
       }
       $line = <IN>;
     }
-    elsif($line =~ /^VERSION\s+(\S+)$/) { 
+    elsif($line =~ /^VERSION\s+(\S+)/) { 
       #VERSION     NC_039477.1
+      #VERSION     NC_039477.1  GI:1489706348
       if(defined $ver) { 
         ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, read multiple VERSION lines for single record ($acc), line:\n$line\n", 1, $FH_HR);
       }
