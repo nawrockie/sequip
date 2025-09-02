@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Tue Mar 19 13:35:06 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:53:49 2019 [migrated from vadr's epn-utils.pm (as of commit 69b003d)]]
-# version: 0.10
+# version: 0.11
 #
 use strict;
 use warnings;
@@ -905,6 +905,72 @@ sub utl_AMaxLengthValue {
 }
 
 #################################################################
+# Subroutine:  utl_AMax()
+# Incept:      EPN, Wed May 21 18:03:56 2025
+# 
+# Purpose:     Return the maximum value numeric 
+#              element in an array.
+#
+# Arguments: 
+#   $AR: reference to the array
+# 
+# Returns:     The maximum value.
+#
+################################################################# 
+sub utl_AMax { 
+  my $nargs_expected = 1;
+  my $sub_name = "utl_AMax()";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($AR) = $_[0];
+
+  my $max = undef;
+  my $nel = scalar(@{$AR});
+  if($nel >= 1) { 
+    $max = $AR->[0];
+  }
+  for(my $i = 1; $i < $nel; $i++) { 
+    if($AR->[$i] > $max) { 
+      $max = $AR->[$i];
+    }
+  }
+
+  return $max;
+}
+
+#################################################################
+# Subroutine:  utl_AMin()
+# Incept:      EPN, Wed May 21 18:02:57 2025
+# 
+# Purpose:     Return the minimum value numeric 
+#              element in an array.
+#
+# Arguments: 
+#   $AR: reference to the array
+# 
+# Returns:     The minimum value.
+#
+################################################################# 
+sub utl_AMin { 
+  my $nargs_expected = 1;
+  my $sub_name = "utl_AMin()";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($AR) = $_[0];
+
+  my $min = undef;
+  my $nel = scalar(@{$AR});
+  if($nel >= 1) { 
+    $min = $AR->[0];
+  }
+  for(my $i = 1; $i < $nel; $i++) { 
+    if($AR->[$i] < $min) { 
+      $min = $AR->[$i];
+    }
+  }
+
+  return $min;
+}
+
+#################################################################
 # Subroutine:  utl_AArgMax()
 # Incept:      EPN, Fri Jan 24 15:09:46 2020
 # 
@@ -938,6 +1004,42 @@ sub utl_AArgMax {
   }
 
   return $argmax;
+}
+
+#################################################################
+# Subroutine:  utl_AArgMin()
+# Incept:      EPN, Wed May 21 18:02:04 2025
+# 
+# Purpose:     Return the index of the minimum value numeric 
+#              element in an array.
+#
+# Arguments: 
+#   $AR: reference to the array
+# 
+# Returns:     The index of the minimum value.
+#
+################################################################# 
+sub utl_AArgMin { 
+  my $nargs_expected = 1;
+  my $sub_name = "utl_AArgMin()";
+  if(scalar(@_) != $nargs_expected) { printf STDERR ("ERROR, $sub_name entered with %d != %d input arguments.\n", scalar(@_), $nargs_expected); exit(1); } 
+  my ($AR) = $_[0];
+
+  my $argmin = undef;
+  my $min    = undef;
+  my $nel = scalar(@{$AR});
+  if($nel >= 1) { 
+    $argmin = 0;
+    $min    = $AR->[0];
+  }
+  for(my $i = 1; $i < $nel; $i++) { 
+    if($AR->[$i] < $min) { 
+      $argmin = $i; 
+      $min    = $AR->[$i];
+    }
+  }
+
+  return $argmin;
 }
 
 #################################################################
@@ -1299,7 +1401,7 @@ sub utl_HADump {
 
   my $undef2print = "!SEQUIP:undef!";
   foreach my $key1 (sort keys %{$HAR}) { 
-    if(defined $HAR->{$key1}) { 
+    if(! defined $HAR->{$key1}) { 
       print $FH ("*H*A{$key1}: $undef2print\n");
     }
     else { 

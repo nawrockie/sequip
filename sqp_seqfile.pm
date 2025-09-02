@@ -4,7 +4,7 @@
 # Eric Nawrocki
 # EPN, Wed Apr  3 06:13:49 2019 [incept, in vadr]
 # EPN, Tue Jul  2 11:45:46 2019 [migrated from vadr's epn-seqfile.pm (as of commit 69b003d)]]
-# version: 0.10
+# version: 0.11
 #
 use strict;
 use warnings;
@@ -483,8 +483,9 @@ sub sqf_GenbankParse {
       }
       $line = <IN>;
     }
-    elsif($line =~ /^VERSION\s+(\S+)$/) { 
+    elsif($line =~ /^VERSION\s+(\S+)/) { 
       #VERSION     NC_039477.1
+      #VERSION     NC_039477.1  GI:1489706348
       if(defined $ver) { 
         ofile_FAIL("ERROR in $sub_name, problem parsing $infile at line $line_idx, read multiple VERSION lines for single record ($acc), line:\n$line\n", 1, $FH_HR);
       }
@@ -819,7 +820,7 @@ sub sqf_EslTranslateCdsToFastaFile {
   if((opt_IsUsed("--ttbl", $opt_HHR)) && (opt_Get("--ttbl", $opt_HHR) != 1)) { 
     $c_opt = "-c " . opt_Get("--ttbl", $opt_HHR);
   }
-  my $translate_cmd = "$esl_translate $c_opt -M -l 3 --watson $cds_fa_file > $tmp1_translate_fa_file";
+  my $translate_cmd = "$esl_translate $c_opt -l 3 --watson $cds_fa_file > $tmp1_translate_fa_file";
   utl_RunCommand($translate_cmd, opt_Get("-v", $opt_HHR), 0, $FH_HR);
 
   # go through output fasta file and rewrite names, so we can fetch 
@@ -848,16 +849,71 @@ sub sqf_EslTranslateCdsToFastaFile {
   # fetch expected translated seqs and print to $out_FH
   my $cds_sqfile     = Bio::Easel::SqFile->new({ fileLocation => $cds_fa_file });
   my $protein_sqfile = Bio::Easel::SqFile->new({ fileLocation => $tmp2_translate_fa_file });
-
+  my $is_trunc5      = undef; # set to 1 if CDS is 5' truncated 
+  my $is_trunc3      = undef; # set to 1 if CDS is 3' truncated 
+  my $codon_start    = undef; # set to codon start value, typically 1 unless 5' truncated
+  my $expected_start = undef; # start coordinate in expected translation
+  my $expected_stop  = undef; # stop coordinate in expected translation
+  my $protein_sqname = undef; # name for output protein sequence
+  
   my $nftr = scalar(@{$ftr_info_AHR});
   for(my $seq_idx = 0; $seq_idx < $cds_sqfile->nseq_ssi; $seq_idx++) { 
     my ($seq_name, $seq_length) = $cds_sqfile->fetch_seq_name_and_length_given_ssi_number($seq_idx);
-    my $fetch_name = "source=" . $seq_name . ",coords=1.." . ($seq_length - 3); # subtract length of stop codon
+    # determine what the output sequence should be, this depends on the format of the sequence name
+    $is_trunc5 = 0;
+    $is_trunc3 = 0;
+    $codon_start = 1;
+    my @el_A = split("/", $seq_name);
+    if(scalar(@el_A) >= 2) {
+      if($el_A[1] =~ /^\<\d+/) { 
+        $is_trunc5 = 1;
+      }
+      if($el_A[1] =~ /\>\d+\:[\+\-]$/) { 
+        $is_trunc3 = 1;
+      }
+    }
+    if(scalar(@el_A) >= 3) {
+      if($el_A[2] =~ /^CS(\d)$/) {
+        $codon_start = $1;
+      }
+    }
+    $protein_sqname = $el_A[0];
+    if(scalar(@el_A) > 1) {
+      my $coords = $el_A[1];
+      $coords =~ s/\<//;
+      $coords =~ s/\>//;
+      $protein_sqname .= "/" . $coords;
+    }
+    
+    # based on is_trunc5, is_trunc3 and codon_start, determine expected start and stop of translation
+    $expected_start = 1;
+    $expected_stop  = $seq_length;
+    if(! $is_trunc3) { 
+      $expected_stop -= 3; # stop codon won't be translated
+    }
+    else {
+      if($codon_start == 1)    { $expected_stop -= ($seq_length % 3); }
+      elsif($codon_start == 2) { $expected_stop -= (($seq_length-1) % 3); }
+      elsif($codon_start == 3) { $expected_stop -= (($seq_length-2) % 3); }
+    }
+    if($codon_start == 2) {
+      $expected_start = 2;
+    }
+    if($codon_start == 3) {
+      $expected_start = 3;
+    }
+    my $fetch_name = "source=" . $seq_name . ",coords=" . $expected_start . ".." . $expected_stop;
     if(! $protein_sqfile->check_seq_exists($fetch_name)) { 
       ofile_FAIL("ERROR in $sub_name, problem translating CDS feature, unable to find expected translated sequence in $tmp2_translate_fa_file:\n\tseq: $seq_name\n\texpected sequence:$fetch_name\n", 1, $FH_HR);
     }
-    print $out_FH ">" . $seq_name . "\n";
-    print $out_FH seq_SqstringAddNewlines($protein_sqfile->fetch_seq_to_sqstring($fetch_name), 60);
+    print $out_FH ">" . $protein_sqname . "\n";
+    my $protein_sqstring = $protein_sqfile->fetch_seq_to_sqstring($fetch_name);
+    if(! $is_trunc5) {
+      if($protein_sqstring !~ m/^M/) {
+        ofile_FAIL("ERROR in $sub_name, problem translating CDS feature, feature does not seem to be 5' truncated but translated protein does not start with an M:\n\tseq: $seq_name\n\texpected sequence:$fetch_name\n", 1, $FH_HR);
+      }
+    }
+    print $out_FH seq_SqstringAddNewlines($protein_sqstring, 60);
   }
   # remove temporary files unless --keep
   if(! opt_Get("--keep", $opt_HHR)) { 
