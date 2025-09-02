@@ -1,5 +1,9 @@
 # sequip 0.x release notes 
 
+### sequip 0.10 release (Sep 2023): Minor update
+  * sqp_seqfile.pm::sqf_EslTranslateCdsToFastaFile now works with
+    truncated CDS.
+
 ### sequip 0.10 release (Sep 2023): Minor bug-fix update
   * Fixes bug in sqp_seqfile.pm:sqf_FeatureTableParse() related to
     single nucleotide coordinate spans.
